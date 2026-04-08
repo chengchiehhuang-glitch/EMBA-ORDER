@@ -1069,7 +1069,8 @@ function saveOcrShopModal(detectedName, items){
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
         <button id="ocr-save-go" class="btn btn-dk btn-full">💾 儲存到店家清單 + 開始開團</button>
         <button id="ocr-just-use" class="btn btn-out btn-full">🚀 只用這次，不儲存</button>
-        <button id="ocr-cancel" style="background:transparent;border:none;color:var(--ink3);padding:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif">取消</button>
+        <button id="ocr-back" style="background:#fef3c7;border:2px solid #fbbf24;color:#92400e;border-radius:10px;padding:11px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 返回選擇其他店家</button>
+        <button id="ocr-cancel" style="background:transparent;border:none;color:var(--ink3);padding:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif">取消（保留目前辨識結果）</button>
       </div>
     </div>`;
   document.body.appendChild(m);
@@ -1124,6 +1125,20 @@ function saveOcrShopModal(detectedName, items){
   };
 
   document.getElementById('ocr-cancel').onclick = close;
+
+  document.getElementById('ocr-back').onclick = ()=>{
+    close();
+    // 清掉辨識結果跳回選店畫面
+    const preview = document.getElementById('menu-upload-preview');
+    const zone = document.getElementById('menu-upload-zone');
+    const ocrBox = document.getElementById('ocr-box');
+    if(preview) preview.innerHTML = '<div style="font-size:1.8rem">📷</div><div class="upload-menu-txt">點擊上傳菜單照片（黑板/紙本/螢幕截圖皆可）</div>';
+    if(zone) zone.classList.remove('has');
+    if(ocrBox) ocrBox.classList.remove('on');
+    const fin = document.getElementById('menu-img-input');
+    if(fin) fin.value = '';
+    go('s-shop');
+  };
 }
 
 // ── 刪除店家 (從 s-presets 呼叫) ──
@@ -1379,7 +1394,7 @@ async function runAI(){
 // ═══════════════════════════════════════════════
 // CREATE GROUP
 // ═══════════════════════════════════════════════
-function doCreate(){
+async function doCreate(){
   // 不再需要團主填付款帳號:三種付款方式內建,由點餐人自選
   S.payMethod='all'; S.payLink=''; S.ipassLink='';
 
@@ -1394,9 +1409,18 @@ function doCreate(){
   };
   S.groups[k][S.type].push(grp); saveG();
   S.curGroupIdx = S.groups[k][S.type].length - 1;
-  if(GAS_URL) sendGAS({action:'createGroup',dateKey:k,type:S.type,groupIdx:S.curGroupIdx,group:{...grp,payQr:''}});
 
-  toast('🎉 開團成功！');
+  if(GAS_URL){
+    toast('⏳ 同步到雲端…');
+    const r = await sendGAS({action:'createGroup',dateKey:k,type:S.type,groupIdx:S.curGroupIdx,group:{...grp,payQr:''}});
+    if(!r.success){
+      toast('⚠️ 雲端同步失敗,本地已儲存');
+    } else {
+      toast('🎉 開團成功！');
+    }
+  } else {
+    toast('🎉 開團成功！');
+  }
   renderDay();
   go('day');
 }
@@ -1769,13 +1793,21 @@ async function doSubmitAll(){
   const ts = new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'});
   const myOrderIdxs = [];
 
+  const toSend = [];
   pendingOrders.forEach(p=>{
     const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:false, ts};
     grp.orders.push(order);
     myOrderIdxs.push(grp.orders.length-1);
-    sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,order});
+    toSend.push(order);
   });
   saveG();
+  // 同步到 GAS (等待完成,確保雲端有資料)
+  if(GAS_URL){
+    toast('⏳ 送出訂單中…');
+    await Promise.all(toSend.map(order =>
+      sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,order})
+    ));
+  }
   renderDoneAll(pendingOrders, myOrderIdxs);
   go('s-done');
 }
@@ -2010,7 +2042,24 @@ function confirmMyPayment(idx){
 // ═══════════════════════════════════════════════
 // GAS
 // ═══════════════════════════════════════════════
-function sendGAS(p){ if(!GAS_URL) return; try{fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});}catch(e){} }
+// 寫入 GAS:使用 text/plain 避免 CORS preflight,awaitable
+async function sendGAS(p){
+  if(!GAS_URL) return {success:false,error:'no GAS_URL'};
+  // 記錄最後一次寫入時間,讓 polling 暫緩避免覆蓋本地
+  S._lastWriteAt = Date.now();
+  try{
+    const r = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(p)
+    });
+    if(!r.ok) return {success:false,error:'HTTP '+r.status};
+    return await r.json();
+  }catch(e){
+    console.warn('sendGAS failed:', e.message);
+    return {success:false, error:e.message};
+  }
+}
 // ★ 從 GAS 讀取最新店家菜單（背景執行）
 async function syncMenus(){
   if(!GAS_URL) return;
@@ -2035,25 +2084,59 @@ function getShopList(type){
 }
 
 async function syncGAS(){
+  // 剛寫入 GAS 後 5 秒內不拉,避免覆蓋還沒同步到遠端的本地資料
+  if(S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000) return;
   try{
     const r=await fetch(GAS_URL+'?action=getGroups&_t='+Date.now());
     const d=await r.json();
-    if(d.success&&d.groups){
-      // Merge groups - GAS回傳的若是舊格式({type:grp})轉換成新格式({type:[grp]})
-      const merged=d.groups;
-      Object.keys(merged).forEach(date=>{
-        Object.keys(merged[date]).forEach(type=>{
-          if(!Array.isArray(merged[date][type])){
-            merged[date][type]=[merged[date][type]];
-          }
-        });
+    if(!(d.success && d.groups)) return;
+    // 先正規化:舊格式 {type:grp} 轉新格式 {type:[grp]}
+    const remote = d.groups;
+    Object.keys(remote).forEach(date=>{
+      Object.keys(remote[date]).forEach(type=>{
+        if(!Array.isArray(remote[date][type])) remote[date][type]=[remote[date][type]];
       });
-      // 以遠端資料為準 (包含所有人的訂單),替換本地
-      S.groups = merged;
-      saveG();
-      // 依目前畫面重新渲染
-      rerenderCurrentScreen();
-    }
+    });
+    // 深度合併:
+    // - 遠端有的團,用遠端版本(含最新訂單/付款狀態)
+    // - 本地獨有的團(剛建但遠端還沒回來),保留
+    // - 同一團內的 orders,以遠端為主,再補上本地獨有的 (用 name+ts 作 key)
+    const local = S.groups || {};
+    const out = {};
+    const allDates = new Set([...Object.keys(local), ...Object.keys(remote)]);
+    allDates.forEach(date=>{
+      out[date] = {};
+      const localDay = local[date] || {};
+      const remoteDay = remote[date] || {};
+      const allTypes = new Set([...Object.keys(localDay), ...Object.keys(remoteDay)]);
+      allTypes.forEach(type=>{
+        const localArr = Array.isArray(localDay[type]) ? localDay[type] : (localDay[type] ? [localDay[type]] : []);
+        const remoteArr = remoteDay[type] || [];
+        const maxLen = Math.max(localArr.length, remoteArr.length);
+        const merged = [];
+        for(let i=0;i<maxLen;i++){
+          const L = localArr[i], R = remoteArr[i];
+          if(L && R){
+            // 合併 orders
+            const lo = L.orders||[], ro = R.orders||[];
+            const seen = new Set();
+            const mergedOrders = [];
+            ro.forEach(o=>{ const k=(o.name||'')+'|'+(o.ts||''); seen.add(k); mergedOrders.push(o); });
+            lo.forEach(o=>{ const k=(o.name||'')+'|'+(o.ts||''); if(!seen.has(k)) mergedOrders.push(o); });
+            merged.push({...R, orders: mergedOrders});
+          } else if(R){
+            merged.push(R);
+          } else if(L){
+            merged.push(L);
+          }
+        }
+        if(merged.length) out[date][type] = merged;
+      });
+      if(!Object.keys(out[date]).length) delete out[date];
+    });
+    S.groups = out;
+    saveG();
+    rerenderCurrentScreen();
   }catch(e){ console.warn('syncGAS failed:', e.message); }
 }
 
