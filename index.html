@@ -581,6 +581,15 @@ function fmt(d){
 }
 
 // ═══════════════════════════════════════════════
+// EMBA E118 成員名單（用於點餐下拉選單）
+// 要新增/移除成員，直接編輯這個陣列
+// ═══════════════════════════════════════════════
+const MEMBERS = [
+  'David','ERICA','Faye Lee','Fion','Frank','Grace','Harry 許栢韶','Isa Li','Min','Tiffany','TONO 黃芳娟',
+  'Jerry 政','俊民','吳佳展','微軒 / Wei (蝦味先)','王雅文','盧宣佑 Yoyo','筱婷','羅國銘','蘇玟蓁 Wen','趙吉兒','Becky'
+];
+
+// ═══════════════════════════════════════════════
 // 系統重置（密碼保護）
 // ═══════════════════════════════════════════════
 // ⚠️ 改密碼：把下面這行的字串換成你想要的
@@ -1612,11 +1621,25 @@ function renderOrderPage(){
       <button class="add-person-btn" onclick="addPerson()">＋幫人點</button>
     </div>
 
-    <div class="sect">👤 姓名</div>
-    <input class="fin" style="padding-left:14px;margin-bottom:14px" id="ord-nm"
-      placeholder="輸入姓名（必填）"
-      value="${p?.name||''}"
-      oninput="S.persons[S.activePerson].name=this.value;updatePersonTab(${S.activePerson})">
+    <div class="sect">👤 訂購人</div>
+    ${(()=>{
+      const curName = p?.name || '';
+      const isMember = MEMBERS.includes(curName);
+      const isOther = curName && !isMember;
+      const showInput = isOther || curName === '';
+      const selVal = isMember ? curName : (isOther ? '__other__' : '');
+      const opts = MEMBERS.map(n=>`<option value="${n}" ${curName===n?'selected':''}>${n}</option>`).join('');
+      return `
+      <select class="fin" id="ord-nm-sel" onchange="onMemberSelect(this.value)" style="padding-left:14px;margin-bottom:8px;background:#fff;cursor:pointer;font-family:inherit;font-size:.95rem">
+        <option value="">-- 請選擇 --</option>
+        ${opts}
+        <option value="__other__" ${isOther?'selected':''}>👥 其他（手動輸入）</option>
+      </select>
+      <input class="fin" id="ord-nm" style="padding-left:14px;margin-bottom:14px;display:${isOther?'block':'none'}"
+        placeholder="輸入姓名（必填）"
+        value="${curName}"
+        oninput="S.persons[S.activePerson].name=this.value;updatePersonTab(S.activePerson)">`;
+    })()}
 
     <div class="sect">選擇品項</div>
     <div class="olist" id="olist"></div>
@@ -1641,6 +1664,26 @@ function updatePersonTab(idx){
     return `<button class="opt ${i===S.activePerson?'active':''} ${hasItem?'has-item':''}"
       onclick="switchPerson(${i})">${label}${hasItem?' ✓':''}</button>`;
   }).join('')+'<button class="add-person-btn" onclick="addPerson()">＋幫人點</button>';
+}
+
+function onMemberSelect(v){
+  const inp = document.getElementById('ord-nm');
+  if(!inp) return;
+  if(v === '__other__'){
+    inp.style.display = 'block';
+    inp.value = '';
+    S.persons[S.activePerson].name = '';
+    setTimeout(()=>inp.focus(),50);
+  } else if(v === ''){
+    inp.style.display = 'none';
+    inp.value = '';
+    S.persons[S.activePerson].name = '';
+  } else {
+    inp.style.display = 'none';
+    inp.value = v;
+    S.persons[S.activePerson].name = v;
+  }
+  updatePersonTab(S.activePerson);
 }
 
 function toggleExistList(headerEl){
