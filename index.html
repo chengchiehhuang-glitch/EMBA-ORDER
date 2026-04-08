@@ -380,6 +380,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
     </div>
     <div class="dgrid" id="dgrid"></div>
 
+    <div style="margin-top:24px;text-align:center">
+      <button onclick="resetAllData()" style="background:transparent;border:1px solid #e5e7eb;color:#9ca3af;border-radius:8px;padding:6px 14px;font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit">⚙️ 系統重置</button>
+    </div>
+
   </div>
 </div>
 
@@ -574,6 +578,49 @@ function fmt(d){
   const m = String(d.getMonth()+1).padStart(2,'0');
   const day = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
+}
+
+// ═══════════════════════════════════════════════
+// 系統重置（密碼保護）
+// ═══════════════════════════════════════════════
+// ⚠️ 改密碼：把下面這行的字串換成你想要的
+const RESET_PASSWORD = 'e118reset';
+
+async function resetAllData(){
+  const pw = prompt('⚠️ 系統重置會清除：\n• 雲端所有開團、訂單資料\n• 本機所有開團與設定\n（店家清單與菜單會保留）\n\n請輸入管理密碼：');
+  if(pw === null) return; // 取消
+  if(pw !== RESET_PASSWORD){ alert('❌ 密碼錯誤'); return; }
+  if(!confirm('最後確認：所有開團與訂單資料將被永久刪除，無法復原。\n\n要繼續嗎？')) return;
+
+  toast('⏳ 重置中…');
+  // 1. 呼叫 GAS 清雲端
+  let cloudOk = true;
+  if(GAS_URL){
+    try{
+      const r = await sendGAS({action:'resetAll', password: RESET_PASSWORD});
+      if(!r || r.success === false){
+        cloudOk = false;
+        console.error('GAS reset failed:', r);
+      }
+    }catch(e){
+      cloudOk = false;
+      console.error(e);
+    }
+  }
+
+  // 2. 清本地（保留店家清單與 GAS_URL 設定）
+  const keepKeys = ['shops_drink','shops_food','gas_url'];
+  const backup = {};
+  keepKeys.forEach(k=>{ const v = localStorage.getItem(k); if(v!==null) backup[k]=v; });
+  localStorage.clear();
+  Object.entries(backup).forEach(([k,v])=>localStorage.setItem(k,v));
+
+  if(cloudOk){
+    alert('✅ 重置完成！\n所有資料已清空，畫面即將重新整理。');
+  } else {
+    alert('⚠️ 本機已重置，但雲端清除失敗\n（可能 GAS 後端尚未更新支援 resetAll，請重新部署 gas-backend.js）\n\n畫面即將重新整理。');
+  }
+  setTimeout(()=>location.reload(), 500);
 }
 function dlbl(k){ const d=new Date(k+'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`; }
 
