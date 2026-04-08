@@ -1755,71 +1755,171 @@ function goConfirm(){
 // LINE Pay: 開啟 LINE 錢包頁
 // iPass Money: 開啟一卡通 MONEY (universal link → fallback App Store)
 // 現金: 純資訊
-// 三個付款方式按鈕:兩段式選擇 (先選 → 再確認)
-// pickerName 是全域函式名稱字串,呼叫方式: pickerName(...extraArgs, method)
+// 三個付款方式按鈕 — 三狀態流程
+// 狀態 1 (idle):三顆按鈕並排,可點選
+// 狀態 2 (selected):點完一顆 → 該顆高亮 + 其他兩顆灰但仍可點切換 + 下方出現「✅ 確認送出」「↩️ 取消」兩顆按鈕
+// 狀態 3 (committed):確認後 → 只顯示一顆代表選中的方式 + 「↩️ 取消重選」連結
+// pickerName: 全域函式名稱字串,呼叫方式: pickerName(...extraArgs, method)
 function payBtns(grp, pickerName, extraArgs){
   const argsJson = JSON.stringify(extraArgs||[]);
-  // data-* 屬性帶上 picker 跟 args,讓 selectPayMethod 知道後續要呼叫誰
   return `
-    <div class="pay-method-group" data-picker="${pickerName}" data-args='${argsJson.replace(/'/g,"&#39;")}'>
-      <button class="pay-method-btn" data-method="linepay" onclick="selectPayMethod(this,'linepay')" style="display:flex;align-items:center;gap:10px;width:100%;background:#06c755;color:#fff;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(6,199,85,.25);transition:all .2s">
-        <span style="font-size:1.4rem">💚</span>
-        <div style="flex:1;text-align:left">
-          <div>LINE Pay</div>
-          <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊選擇</div>
-        </div>
-      </button>
-      <button class="pay-method-btn" data-method="ipass" onclick="selectPayMethod(this,'ipass')" style="display:flex;align-items:center;gap:10px;width:100%;background:#ee7000;color:#fff;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(238,112,0,.25);margin-top:8px;transition:all .2s">
-        <span style="font-size:1.4rem">💳</span>
-        <div style="flex:1;text-align:left">
-          <div>iPass Money</div>
-          <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊選擇</div>
-        </div>
-      </button>
-      <button class="pay-method-btn" data-method="cash" onclick="selectPayMethod(this,'cash')" style="display:flex;align-items:center;gap:10px;width:100%;background:#fbbf24;color:#1a1714;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25);margin-top:8px;transition:all .2s">
-        <span style="font-size:1.4rem">💵</span>
-        <div style="flex:1;text-align:left">
-          <div>現金</div>
-          <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.85;margin-top:1px">點擊選擇</div>
-        </div>
-      </button>
+    <div class="pay-method-group" data-picker="${pickerName}" data-args='${argsJson.replace(/'/g,"&#39;")}' data-state="idle" data-selected="">
+      <div class="pmg-options">
+        <button class="pay-method-btn" data-method="linepay" onclick="selectPayMethod(this,'linepay')" style="display:flex;align-items:center;gap:10px;width:100%;background:#06c755;color:#fff;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(6,199,85,.25);transition:all .2s">
+          <span style="font-size:1.4rem">💚</span>
+          <div style="flex:1;text-align:left">
+            <div>LINE Pay</div>
+            <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊選擇</div>
+          </div>
+        </button>
+        <button class="pay-method-btn" data-method="ipass" onclick="selectPayMethod(this,'ipass')" style="display:flex;align-items:center;gap:10px;width:100%;background:#ee7000;color:#fff;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(238,112,0,.25);margin-top:8px;transition:all .2s">
+          <span style="font-size:1.4rem">💳</span>
+          <div style="flex:1;text-align:left">
+            <div>iPass Money</div>
+            <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊選擇</div>
+          </div>
+        </button>
+        <button class="pay-method-btn" data-method="cash" onclick="selectPayMethod(this,'cash')" style="display:flex;align-items:center;gap:10px;width:100%;background:#fbbf24;color:#1a1714;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25);margin-top:8px;transition:all .2s">
+          <span style="font-size:1.4rem">💵</span>
+          <div style="flex:1;text-align:left">
+            <div>現金</div>
+            <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.85;margin-top:1px">點擊選擇</div>
+          </div>
+        </button>
+      </div>
+      <div class="pmg-actions" style="display:none;flex-direction:column;gap:8px;margin-top:10px">
+        <button onclick="commitPayMethod(this)" style="width:100%;background:#15803d;color:#fff;border:none;border-radius:10px;padding:13px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit">✅ 確認送出</button>
+        <button onclick="resetPayMethod(this)" style="width:100%;background:transparent;border:1.5px solid var(--bdr2);color:var(--ink2);border-radius:10px;padding:11px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">↩️ 取消，重新選擇</button>
+      </div>
     </div>`;
 }
 
-// ── 第一段:選中(高亮+其他變灰),按鈕變成「再點一次確認」 ──
+// 共用工具:取得 group 元素
+function _pmGroup(el){ return el.closest('.pay-method-group'); }
+
+// ── 點任一付款按鈕:選擇/切換 ──
 function selectPayMethod(btn, method){
-  const group = btn.closest('.pay-method-group');
+  const group = _pmGroup(btn);
   if(!group) return;
-  // 如果這顆已經是確認狀態,等於「再點一次=送出」
-  if(btn.dataset.confirmed === '1'){
-    // 真的送出
-    const picker = group.dataset.picker;
-    const args = JSON.parse((group.dataset.args||'[]').replace(/&#39;/g,"'"));
-    if(typeof window[picker] === 'function'){
-      window[picker](...args, method);
-    } else {
-      console.error('payment picker not found:', picker);
-    }
-    return;
-  }
-  // 否則:第一段選擇
+  if(group.dataset.state === 'committed') return; // 已送出不可改
+  group.dataset.state = 'selected';
+  group.dataset.selected = method;
   const all = group.querySelectorAll('.pay-method-btn');
   all.forEach(b => {
-    if(b === btn){
-      b.dataset.confirmed = '1';
+    const isSel = (b === btn);
+    b.style.transition = 'all .2s';
+    if(isSel){
       b.style.border = '3px solid #1a1714';
-      b.style.transform = 'scale(1.02)';
-      b.style.boxShadow = '0 6px 18px rgba(0,0,0,.22)';
+      b.style.transform = 'scale(1.03)';
+      b.style.boxShadow = '0 6px 18px rgba(0,0,0,.25)';
+      b.style.opacity = '1';
+      b.style.filter = 'none';
       const sub = b.querySelector('.pmb-sub');
-      if(sub) sub.textContent = '⚠️ 再點一次確認送出';
+      if(sub) sub.textContent = '✓ 已選擇';
     } else {
-      b.dataset.confirmed = '';
-      b.disabled = true;
-      b.style.opacity = '.35';
-      b.style.cursor = 'not-allowed';
-      b.style.filter = 'grayscale(.6)';
+      b.style.border = '3px solid transparent';
+      b.style.transform = 'scale(1)';
+      b.style.boxShadow = 'none';
+      b.style.opacity = '.4';
+      b.style.filter = 'grayscale(.5)';
+      const sub = b.querySelector('.pmb-sub');
+      if(sub) sub.textContent = '點擊改選';
     }
   });
+  // 顯示確認/取消區
+  const actions = group.querySelector('.pmg-actions');
+  if(actions) actions.style.display = 'flex';
+}
+
+// ── 取消選擇:回到 idle ──
+function resetPayMethod(triggerBtn){
+  const group = _pmGroup(triggerBtn);
+  if(!group) return;
+  group.dataset.state = 'idle';
+  group.dataset.selected = '';
+  const all = group.querySelectorAll('.pay-method-btn');
+  all.forEach(b => {
+    b.disabled = false;
+    b.style.border = '3px solid transparent';
+    b.style.transform = 'scale(1)';
+    b.style.boxShadow = '';
+    b.style.opacity = '1';
+    b.style.filter = 'none';
+    b.style.cursor = 'pointer';
+    const sub = b.querySelector('.pmb-sub');
+    if(sub) sub.textContent = '點擊選擇';
+  });
+  const actions = group.querySelector('.pmg-actions');
+  if(actions) actions.style.display = 'none';
+}
+
+// ── 確認送出:呼叫 picker → 切到 committed 狀態(只剩選定那顆) ──
+function commitPayMethod(triggerBtn){
+  const group = _pmGroup(triggerBtn);
+  if(!group) return;
+  const method = group.dataset.selected;
+  if(!method) return;
+  const picker = group.dataset.picker;
+  const args = JSON.parse((group.dataset.args||'[]').replace(/&#39;/g,"'"));
+  if(typeof window[picker] !== 'function'){
+    console.error('payment picker not found:', picker);
+    return;
+  }
+  // 標記成 committed,讓 picker 內部 render committed UI
+  group.dataset.state = 'committed';
+  window[picker](...args, method);
+}
+
+// ── 由 confirm*Payment 內部呼叫:把 group 換成已確認的精簡顯示 ──
+function renderCommittedPayUI(area, method, hostName){
+  const labels = {
+    linepay: { ico:'💚', name:'LINE Pay',  bg:'#06c755', fg:'#fff' },
+    ipass:   { ico:'💳', name:'iPass Money', bg:'#ee7000', fg:'#fff' },
+    cash:    { ico:'💵', name:'現金',      bg:'#fbbf24', fg:'#1a1714' }
+  };
+  const c = labels[method];
+  if(!c) return;
+  area.innerHTML = `
+    <div style="width:100%;background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:16px;text-align:center">
+      <div style="font-size:.72rem;font-weight:900;color:#15803d;letter-spacing:.06em;margin-bottom:8px">✅ 已記錄付款方式</div>
+      <div style="display:inline-flex;align-items:center;gap:10px;background:${c.bg};color:${c.fg};border-radius:10px;padding:14px 22px;font-size:1.05rem;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.15)">
+        <span style="font-size:1.5rem">${c.ico}</span>
+        <span>${c.name}</span>
+      </div>
+      <div style="font-size:.7rem;color:#166534;margin-top:8px">團主會在訂單清單看到此付款方式</div>
+      <button onclick="undoCommitPay(this)" style="margin-top:10px;background:transparent;border:1.5px solid #86efac;color:#15803d;border-radius:8px;padding:7px 14px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">↩️ 取消，重新選擇</button>
+    </div>`;
+}
+
+// ── 取消已送出:回到三按鈕選擇狀態 ──
+async function undoCommitPay(btn){
+  // 找到 confirm function 的 idx (從 area parent 推) — 簡化:從目前 active screen 上的 group 重新 render
+  // 用一個全域記錄
+  const ctx = window._lastCommitContext;
+  if(!ctx) return;
+  const grp = S.curGroup;
+  if(!grp) return;
+  // reset 訂單為未付款
+  ctx.idxs.forEach(i => {
+    if(grp.orders[i]){
+      grp.orders[i].paid = false;
+      grp.orders[i].paidMethod = null;
+    }
+  });
+  saveG();
+  // 同步 GAS
+  if(GAS_URL){
+    await Promise.all(ctx.idxs.map(i =>
+      sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:i, paid:false, paidMethod:''})
+    ));
+  }
+  // 重新渲染按鈕區 (注意 confirmAllPayments 第一個參數是陣列,confirmMyPayment 是 number)
+  const area = document.getElementById('pay-choice-area');
+  if(area){
+    const extraArg = (ctx.picker === 'confirmAllPayments') ? [ctx.idxs] : [ctx.idxs[0]];
+    area.innerHTML = payBtns(grp, ctx.picker, extraArg);
+  }
+  toast('↩️ 已取消，請重新選擇');
 }
 
 async function doSubmitAll(){
@@ -1890,17 +1990,16 @@ async function confirmAllPayments(idxs, method){
     }
   });
   saveG();
-  // 同步到 GAS
   if(GAS_URL){
     await Promise.all((idxs||[]).map(i =>
       sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:i, paid:true, paidMethod:method})
     ));
   }
-  // 用確認訊息取代原本的三個按鈕區
+  // 記錄 undo context
+  window._lastCommitContext = { picker:'confirmAllPayments', idxs:[...(idxs||[])] };
+  // 切換 UI 到 committed 狀態
   const area = document.getElementById('pay-choice-area');
-  if(area){
-    area.innerHTML = `<div style="width:100%;background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:16px;text-align:center;color:#15803d;font-weight:900;font-size:.95rem">✅ 已記錄:${payMethodLabel(method)}<div style="font-size:.7rem;font-weight:500;margin-top:4px;color:#166534">團主會在訂單清單看到你的付款方式</div></div>`;
-  }
+  if(area) renderCommittedPayUI(area, method, grp.hostName);
   toast('✅ 付款方式已記錄 ('+payMethodLabel(method)+')');
 }
 
@@ -2063,10 +2162,9 @@ async function confirmMyPayment(idx, method){
   if(GAS_URL){
     await sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:idx, paid:true, paidMethod:method});
   }
+  window._lastCommitContext = { picker:'confirmMyPayment', idxs:[idx] };
   const area = document.getElementById('pay-choice-area');
-  if(area){
-    area.innerHTML = `<div style="width:100%;background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:16px;text-align:center;color:#15803d;font-weight:900;font-size:.95rem">✅ 已記錄:${payMethodLabel(method)}<div style="font-size:.7rem;font-weight:500;margin-top:4px;color:#166534">團主會在訂單清單看到你的付款方式</div></div>`;
-  }
+  if(area) renderCommittedPayUI(area, method, grp.hostName);
   toast('✅ 付款方式已記錄 ('+payMethodLabel(method)+')');
 }
 
