@@ -1028,20 +1028,12 @@ async function handleMenuImg(e){
 
       setOcrSteps([
         {st:'done',txt:'辨識完成'},
-        {st:'done',txt:`✅ 辨識到 ${items.length} 個品項，請選擇此店家後確認菜單`}
+        {st:'done',txt:`✅ 辨識到 ${items.length} 個品項`}
       ]);
 
-      // Auto create custom shop entry
-      const shopName = result.shopName || '自訂店家（上傳菜單）';
-      S.shopSel = {name: shopName, addr:'', icon:'📋'};
-      S.aiMenu = items;
-      S.hostName=''; S.payMethod=null; S.payLink=''; S.ipassLink=''; S.payQr=null; S.announcement='';
-      S.setupStep = 1;
-
-      // Wait a moment then navigate
-      await new Promise(r=>setTimeout(r,1000));
-      renderSetup();
-      go('s-setup');
+      // 跳出 modal 讓使用者確認店名 + 決定是否存入店家資料庫
+      const detectedName = result.shopName || '';
+      saveOcrShopModal(detectedName, items);
 
     }catch(err){
       console.error('OCR error:', err);
@@ -1052,6 +1044,140 @@ async function handleMenuImg(e){
 }
 
 document.addEventListener('click',e=>{ if(!e.target.closest('#fwrap')) document.getElementById('fdrop')?.classList.remove('on'); });
+
+// ── OCR 辨識後儲存店家 modal ──
+function saveOcrShopModal(detectedName, items){
+  const existing = document.getElementById('save-shop-modal');
+  if(existing) existing.remove();
+  const isDr = S.type==='drink';
+  const defaultIcon = isDr ? '🧋' : '🍱';
+  const m = document.createElement('div');
+  m.id = 'save-shop-modal';
+  m.className = 'cf-modal';
+  m.innerHTML = `
+    <div class="cf-sheet" style="max-width:380px">
+      <div class="cf-title">📸 辨識完成</div>
+      <div class="cf-msg">辨識到 <b>${items.length}</b> 個品項。請確認店家資訊：</div>
+      <div style="margin-top:12px">
+        <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:4px">店名 <span style="color:#dc2626">*</span></div>
+        <input id="ocr-name" class="fin" style="padding-left:14px;margin-bottom:10px" placeholder="例：五十嵐 成大店" value="${(detectedName||'').replace(/"/g,'&quot;')}">
+        <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:4px">地址（選填）</div>
+        <input id="ocr-addr" class="fin" style="padding-left:14px;margin-bottom:10px" placeholder="例：台南市東區育樂街79號">
+        <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:4px">電話（選填）</div>
+        <input id="ocr-tel" class="fin" style="padding-left:14px;margin-bottom:10px" placeholder="例：06-208-8650">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+        <button id="ocr-save-go" class="btn btn-dk btn-full">💾 儲存到店家清單 + 開始開團</button>
+        <button id="ocr-just-use" class="btn btn-out btn-full">🚀 只用這次，不儲存</button>
+        <button id="ocr-cancel" style="background:transparent;border:none;color:var(--ink3);padding:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif">取消</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+
+  function close(){ m.remove(); }
+  function getName(){ return document.getElementById('ocr-name').value.trim(); }
+
+  document.getElementById('ocr-save-go').onclick = async ()=>{
+    const name = getName();
+    if(!name){ toast('請輸入店名'); return; }
+    const addr = document.getElementById('ocr-addr').value.trim();
+    const tel  = document.getElementById('ocr-tel').value.trim();
+    close();
+    toast('⏳ 儲存中…');
+    try{
+      const resp = await fetch(GAS_URL,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain'},
+        body: JSON.stringify({
+          action:'saveShop',
+          type: S.type, name, addr, tel, icon: defaultIcon,
+          items: items.map(it=>({name:it.name, price:it.price, cat:it.cat}))
+        })
+      });
+      const d = await resp.json();
+      if(!d.success) throw new Error(d.error||'儲存失敗');
+      toast(`✅ 已儲存 ${d.added} 項到店家清單`);
+      // 重新同步菜單
+      await syncMenus();
+    }catch(err){
+      console.error('saveShop error:', err);
+      toast('⚠️ 儲存失敗：' + err.message);
+    }
+    // 不管成功失敗都進入開團流程
+    S.shopSel = {name, addr, tel, icon: defaultIcon};
+    S.aiMenu = items;
+    S.hostName=''; S.payMethod=null; S.payLink=''; S.ipassLink=''; S.payQr=null; S.announcement='';
+    S.setupStep = 1;
+    renderSetup();
+    go('s-setup');
+  };
+
+  document.getElementById('ocr-just-use').onclick = ()=>{
+    const name = getName() || '自訂店家（上傳菜單）';
+    close();
+    S.shopSel = {name, addr:'', tel:'', icon: defaultIcon};
+    S.aiMenu = items;
+    S.hostName=''; S.payMethod=null; S.payLink=''; S.ipassLink=''; S.payQr=null; S.announcement='';
+    S.setupStep = 1;
+    renderSetup();
+    go('s-setup');
+  };
+
+  document.getElementById('ocr-cancel').onclick = close;
+}
+
+// ── 刪除店家 (從 s-presets 呼叫) ──
+async function deletePresetShop(idx){
+  const list = getShopList(S.type);
+  const shop = list[idx];
+  if(!shop) return;
+  if(!confirm(`確定要刪除「${shop.name}」？\n此店家的所有品項會從資料庫移除,無法復原。`)) return;
+  toast('⏳ 刪除中…');
+  try{
+    const resp = await fetch(GAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'deleteShop', type: S.type, name: shop.name})
+    });
+    const d = await resp.json();
+    if(!d.success) throw new Error(d.error||'刪除失敗');
+    toast(`✅ 已刪除(${d.deleted} 列)`);
+    await syncMenus();
+    goPresets();
+  }catch(err){
+    toast('⚠️ 刪除失敗：'+err.message);
+  }
+}
+
+// ── 重新命名店家 ──
+async function renamePresetShop(idx){
+  const list = getShopList(S.type);
+  const shop = list[idx];
+  if(!shop) return;
+  const newName = prompt(`輸入新的店家名稱：`, shop.name);
+  if(!newName || newName.trim()===''||newName.trim()===shop.name) return;
+  toast('⏳ 更新中…');
+  try{
+    const resp = await fetch(GAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({action:'renameShop', type: S.type, oldName: shop.name, newName: newName.trim()})
+    });
+    const d = await resp.json();
+    if(!d.success) throw new Error(d.error||'更新失敗');
+    toast(`✅ 已改名(${d.renamed} 列)`);
+    await syncMenus();
+    goPresets();
+  }catch(err){
+    toast('⚠️ 改名失敗：'+err.message);
+  }
+}
+
+// ── 切換管理模式 ──
+function togglePresetsManage(){
+  S.presetsManage = !S.presetsManage;
+  goPresets();
+}
 
 function pickShop(idx){
   const list=getShopList(S.type);
@@ -1975,13 +2101,16 @@ function goPresets(){
   const isDr = S.type==='drink';
   const list  = getShopList(S.type);
   const count = list.length;
+  const mgr = !!S.presetsManage;
 
   document.getElementById('ps-title').textContent =
     isDr ? '🧋 精選飲料店（'+count+'間）' : '🍱 精選便當餐廳（'+count+'間）';
-  document.getElementById('ps-sub').textContent = '含地址、電話、完整菜單';
+  document.getElementById('ps-sub').textContent = mgr ? '⚙️ 管理模式：可重新命名或刪除店家' : '含地址、電話、完整菜單';
 
   const wrap = document.getElementById('ps-wrap');
   let html = '';
+  // 管理模式切換
+  html += '<button onclick="togglePresetsManage()" style="width:100%;padding:11px;border-radius:9px;border:2px solid '+(mgr?'#dc2626':'var(--bdr2)')+';background:'+(mgr?'#fef2f2':'var(--sur)')+';color:'+(mgr?'#dc2626':'var(--ink)')+';font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:12px;font-family:inherit">'+(mgr?'✓ 完成管理，返回正常模式':'⚙️ 進入管理模式（重命名/刪除店家）')+'</button>';
 
   list.forEach(function(shop, idx){
     const mapUrl = 'https://maps.google.com/?q=' + encodeURIComponent((shop.addr||shop.name)+' 台南');
@@ -2017,7 +2146,12 @@ function goPresets(){
       +   '<span class="pshop-arrow">›</span>'
       + '</div>'
       + '<div class="pshop-body">'
-      +   '<button class="pshop-select" onclick="pickPresetShop(' + idx + ')">✅ 選擇此店家開始開團</button>'
+      +   (mgr
+          ? '<div style="display:flex;gap:8px;margin-bottom:8px">'
+            + '<button onclick="renamePresetShop(' + idx + ')" style="flex:1;padding:11px;border-radius:9px;border:2px solid #fbbf24;background:#fffbeb;color:#92400e;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ 重新命名</button>'
+            + '<button onclick="deletePresetShop(' + idx + ')" style="flex:1;padding:11px;border-radius:9px;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">🗑 刪除店家</button>'
+            + '</div>'
+          : '<button class="pshop-select" onclick="pickPresetShop(' + idx + ')">✅ 選擇此店家開始開團</button>')
       +   menuHtml
       + '</div>'
       + '</div>';
