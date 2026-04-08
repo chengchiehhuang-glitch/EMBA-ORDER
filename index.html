@@ -354,6 +354,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 }
 #pdf-print-area{display:none}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js/dist/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -1685,6 +1686,8 @@ function updFbar(){
 // CONFIRM & SUBMIT
 // ═══════════════════════════════════════════════
 function goConfirm(){
+  // 每次進入確認頁清掉上次暫存，強制重新選擇
+  S._pendingPayMethod = null;
   // Save current note
   const noteEl = document.getElementById('ord-note');
   if(noteEl) S.persons[S.activePerson].note = noteEl.value;
@@ -1743,7 +1746,7 @@ function goConfirm(){
       <div class="pb-t">💳 付款給團主 ${grp.hostName}</div>
       <div class="pb-a">NT$${grandTotal}</div>
       <div class="pb-s">請先選擇付款方式並按「✅ 確認送出」記錄，再按最下方「確認送出所有訂單」</div>
-      <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px">${payBtns(grp,'stagePayMethod',[])}</div>
+      <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px">${simplePayBtns()}</div>
     </div>
     <div class="ibox i-ok">✅ 確認金額與付款方式無誤後送出</div>
     <button class="btn btn-dk btn-full" onclick="doSubmitAll()">✅ 確認送出所有訂單</button>
@@ -1928,6 +1931,42 @@ async function undoCommitPay(btn){
 function stagePayMethod(method){
   S._pendingPayMethod = method;
   toast('✅ 已記錄付款方式 ('+payMethodLabel(method)+')');
+}
+
+// 單擊即完成的付款選擇器（只有 s-confirm 用）
+function simplePayBtns(){
+  const labels = {
+    linepay: { ico:'💚', name:'LINE Pay',    bg:'#06c755', fg:'#fff' },
+    ipass:   { ico:'💳', name:'iPass Money', bg:'#ee7000', fg:'#fff' },
+    cash:    { ico:'💵', name:'現金',        bg:'#fbbf24', fg:'#1a1714' }
+  };
+  const m = S._pendingPayMethod;
+  if(m && labels[m]){
+    const c = labels[m];
+    return '<div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:8px">'
+      +'<div style="display:inline-flex;align-items:center;gap:10px;background:'+c.bg+';color:'+c.fg+';border-radius:10px;padding:14px 22px;font-size:1.05rem;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.15)">'
+      +'<span style="font-size:1.5rem">'+c.ico+'</span><span>'+c.name+'</span></div>'
+      +'<button onclick="resetStagedPay()" style="background:transparent;border:1.5px solid var(--bdr2);color:var(--ink2);border-radius:8px;padding:7px 14px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">↩️ 取消，重新選擇</button>'
+      +'</div>';
+  }
+  return '<div style="width:100%;display:flex;flex-direction:column;gap:8px">'
+    +'<button onclick="pickStagedPay(\'linepay\')" style="display:flex;align-items:center;gap:10px;width:100%;background:#06c755;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(6,199,85,.25)"><span style="font-size:1.4rem">💚</span><span style="flex:1;text-align:left">LINE Pay</span></button>'
+    +'<button onclick="pickStagedPay(\'ipass\')" style="display:flex;align-items:center;gap:10px;width:100%;background:#ee7000;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(238,112,0,.25)"><span style="font-size:1.4rem">💳</span><span style="flex:1;text-align:left">iPass Money</span></button>'
+    +'<button onclick="pickStagedPay(\'cash\')" style="display:flex;align-items:center;gap:10px;width:100%;background:#fbbf24;color:#1a1714;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25)"><span style="font-size:1.4rem">💵</span><span style="flex:1;text-align:left">現金</span></button>'
+    +'</div>';
+}
+
+function pickStagedPay(m){
+  S._pendingPayMethod = m;
+  const area = document.getElementById('pay-choice-area');
+  if(area) area.innerHTML = simplePayBtns();
+  toast('✅ 已選擇：'+payMethodLabel(m));
+}
+
+function resetStagedPay(){
+  S._pendingPayMethod = null;
+  const area = document.getElementById('pay-choice-area');
+  if(area) area.innerHTML = simplePayBtns();
 }
 
 async function doSubmitAll(){
@@ -2444,7 +2483,7 @@ function exportPDF(){
   html += '<div class="no-print" style="background:#1a1714;color:#fbbf24;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">';
   html += '<button onclick="document.getElementById(\'pdfview\').remove()" style="background:rgba(255,255,255,.15);color:#f5f0e8;border:none;border-radius:7px;padding:8px 12px;font-size:.84rem;font-weight:700;cursor:pointer;font-family:sans-serif">← 返回</button>';
   html += '<span style="font-size:.85rem;font-weight:700">EMBA E118 訂單</span>';
-  html += '<button onclick="window.print()" style="background:#fbbf24;color:#1a1714;border:none;border-radius:7px;padding:8px 16px;font-size:.84rem;font-weight:900;cursor:pointer;font-family:sans-serif">列印/PDF</button>';
+  html += '<button onclick="doDownloadPDF()" style="background:#fbbf24;color:#1a1714;border:none;border-radius:7px;padding:8px 16px;font-size:.84rem;font-weight:900;cursor:pointer;font-family:sans-serif">📥 下載 PDF</button>';
   html += '</div>';
 
   // Content
@@ -2484,6 +2523,24 @@ function exportPDF(){
   if(existing) existing.remove();
   document.body.insertAdjacentHTML('beforeend', html);
   window.scrollTo(0,0);
+}
+
+// 直接下載 PDF（使用 html2pdf.js）
+function doDownloadPDF(){
+  const el = document.getElementById('pdfview');
+  if(!el){ toast('找不到訂單內容'); return; }
+  if(typeof html2pdf === 'undefined'){ toast('PDF 套件載入中，請稍候再試'); return; }
+  const grp = S.curGroup;
+  const fname = 'EMBA-E118-'+(S.type==='drink'?'飲料':'便當')+'-'+S.selDate+'-'+(grp?.shopName||'訂單')+'.pdf';
+  const content = el.querySelector('div > div') || el;
+  toast('⏳ 產生 PDF 中…');
+  html2pdf().set({
+    margin: 8,
+    filename: fname,
+    image: { type:'jpeg', quality:0.95 },
+    html2canvas: { scale:2, useCORS:true, backgroundColor:'#fff' },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  }).from(content).save().then(()=>toast('✅ PDF 已下載')).catch(e=>{ console.error(e); toast('❌ 產生失敗'); });
 }
 
 
