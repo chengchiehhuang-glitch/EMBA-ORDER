@@ -553,7 +553,7 @@ function init(){
   try{ S.groups=JSON.parse(localStorage.getItem('grps')||'{}'); }catch(e){}
   try{ S.remoteMenus=JSON.parse(localStorage.getItem('remote_menus')||'null'); }catch(e){}
   renderGrid();
-  if(GAS_URL){ syncGAS(); syncMenus(); }
+  if(GAS_URL){ syncGAS(); syncMenus(); startSyncPolling(); }
 }
 function saveG(){ localStorage.setItem('grps',JSON.stringify(S.groups)); }
 function setGasUrl(url){
@@ -1910,7 +1910,7 @@ function getShopList(type){
 
 async function syncGAS(){
   try{
-    const r=await fetch(GAS_URL+'?action=getGroups');
+    const r=await fetch(GAS_URL+'?action=getGroups&_t='+Date.now());
     const d=await r.json();
     if(d.success&&d.groups){
       // Merge groups - GAS回傳的若是舊格式({type:grp})轉換成新格式({type:[grp]})
@@ -1922,11 +1922,51 @@ async function syncGAS(){
           }
         });
       });
-      Object.assign(S.groups,merged);
-      saveG(); renderGrid();
+      // 以遠端資料為準 (包含所有人的訂單),替換本地
+      S.groups = merged;
+      saveG();
+      // 依目前畫面重新渲染
+      rerenderCurrentScreen();
     }
-  }catch(e){}
+  }catch(e){ console.warn('syncGAS failed:', e.message); }
 }
+
+// ── 判斷目前在哪個畫面,呼叫對應 render 函式 ──
+function rerenderCurrentScreen(){
+  const active = document.querySelector('.scr.on');
+  if(!active) return;
+  const id = active.id;
+  try{
+    if(id==='s-land') renderGrid();
+    else if(id==='s-day') { if(typeof renderDay==='function') renderDay(); }
+    else if(id==='s-group'){
+      // 訂單清單畫面 — 同步團組資料後重新渲染
+      if(S.curGroup && S.selDate && S.type){
+        const grps = S.groups[S.selDate]?.[S.type];
+        if(Array.isArray(grps) && grps[S.curGroupIdx]){
+          S.curGroup = grps[S.curGroupIdx];
+          if(typeof renderGroupDetail==='function') renderGroupDetail();
+        }
+      }
+    }
+    // 其他畫面 (點餐中、完成頁) 不自動重繪避免干擾輸入
+  }catch(e){ console.warn('rerender failed:', e.message); }
+}
+
+// ── 自動輪詢:每 8 秒拉一次遠端資料 (只有 tab 可見時) ──
+let _syncTimer = null;
+function startSyncPolling(){
+  if(_syncTimer) clearInterval(_syncTimer);
+  _syncTimer = setInterval(()=>{
+    if(document.visibilityState==='visible' && GAS_URL){
+      syncGAS();
+    }
+  }, 8000);
+}
+document.addEventListener('visibilitychange', ()=>{
+  // 回到 tab 時立刻同步一次
+  if(document.visibilityState==='visible' && GAS_URL) syncGAS();
+});
 
 // ═══════════════════════════════════════════════
 // 精選店家列表
