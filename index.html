@@ -1755,33 +1755,34 @@ function goConfirm(){
 // LINE Pay: 開啟 LINE 錢包頁
 // iPass Money: 開啟一卡通 MONEY (universal link → fallback App Store)
 // 現金: 純資訊
-const LINEPAY_URL = 'https://line.me/R/nv/wallet';
-const IPASS_URL   = 'https://applink.ipass.com.tw/';
-function payBtns(grp){
+// 三個付款方式按鈕:點擊後直接記錄(不跳轉 App)
+// pickerName 是全域函式名稱字串 (例如 'confirmMyPayment'),extra 是前面的參數陣列
+function payBtns(grp, pickerName, extraArgs){
+  const args = (extraArgs||[]).map(a=>JSON.stringify(a)).join(',');
+  const prefix = args ? args+',' : '';
+  const mk = (method) => `${pickerName}(${prefix}'${method}')`;
   return `
-    <a href="${LINEPAY_URL}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;width:100%;background:#06c755;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;text-decoration:none;font-family:'Noto Sans TC',sans-serif;box-shadow:0 3px 10px rgba(6,199,85,.25)">
+    <button onclick="${mk('linepay')}" style="display:flex;align-items:center;gap:10px;width:100%;background:#06c755;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(6,199,85,.25)">
       <span style="font-size:1.4rem">💚</span>
       <div style="flex:1;text-align:left">
         <div>LINE Pay</div>
-        <div style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊開啟 LINE Pay App</div>
+        <div style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊記錄：我用 LINE Pay 付</div>
       </div>
-      <span style="font-size:1.1rem">›</span>
-    </a>
-    <a href="${IPASS_URL}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;width:100%;background:#ee7000;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;text-decoration:none;font-family:'Noto Sans TC',sans-serif;box-shadow:0 3px 10px rgba(238,112,0,.25)">
+    </button>
+    <button onclick="${mk('ipass')}" style="display:flex;align-items:center;gap:10px;width:100%;background:#ee7000;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(238,112,0,.25)">
       <span style="font-size:1.4rem">💳</span>
       <div style="flex:1;text-align:left">
         <div>iPass Money</div>
-        <div style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊開啟一卡通 MONEY</div>
+        <div style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊記錄：我用 iPass Money 付</div>
       </div>
-      <span style="font-size:1.1rem">›</span>
-    </a>
-    <div style="display:flex;align-items:center;gap:10px;width:100%;background:#fffbeb;border:2px solid #fde68a;color:#92400e;border-radius:10px;padding:13px 16px;font-size:.88rem;font-weight:900">
+    </button>
+    <button onclick="${mk('cash')}" style="display:flex;align-items:center;gap:10px;width:100%;background:#fbbf24;color:#1a1714;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25)">
       <span style="font-size:1.4rem">💵</span>
       <div style="flex:1;text-align:left">
         <div>現金</div>
-        <div style="font-size:.68rem;font-weight:500;opacity:.85;margin-top:1px">當面交給團主 ${grp.hostName||''}</div>
+        <div style="font-size:.66rem;font-weight:500;opacity:.85;margin-top:1px">點擊記錄：當面給團主 ${grp.hostName||''}</div>
       </div>
-    </div>`;
+    </button>`;
 }
 
 async function doSubmitAll(){
@@ -1830,13 +1831,11 @@ function renderDoneAll(pendingOrders, myOrderIdxs){
       <div class="done-s">${pendingOrders.length>1?`共 ${pendingOrders.length} 人，合計 NT$${grandTotal}`:'付款完成後請確認'}</div>
     </div>
     ${receiptCards}
-    <div class="paybox"><div class="pb-t">💳 付款給團主 ${grp.hostName}</div><div class="pb-a">NT$${grandTotal}</div><div style="display:flex;flex-direction:column;align-items:center;gap:8px">${payBtns(grp)}</div></div>
-    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:var(--r);padding:14px;margin-bottom:10px;text-align:center">
-      <div style="font-size:.72rem;font-weight:700;color:var(--grn);margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase">付款完成後請確認</div>
-      <button id="paid-confirm-btn" class="btn btn-full" style="background:var(--grn);color:#fff"
-        onclick="confirmAllPayments(${JSON.stringify(myOrderIdxs)})">
-        💰 我已完成付款
-      </button>
+    <div class="paybox">
+      <div class="pb-t">💳 請選擇付款方式</div>
+      <div class="pb-a">NT$${grandTotal}</div>
+      <div class="pb-s">點選後系統會記錄你的付款方式，讓團主知道如何收款</div>
+      <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px">${payBtns(grp,'confirmAllPayments',[myOrderIdxs])}</div>
     </div>
     <button class="btn btn-out btn-full" style="margin-bottom:8px" onclick="openGroupDetail('${S.type}')">
       📋 查看今日訂單清單
@@ -1844,21 +1843,28 @@ function renderDoneAll(pendingOrders, myOrderIdxs){
     <button class="btn btn-dk btn-full" onclick="resetAndGoHome()">← 回首頁</button>`;
 }
 
-function confirmAllPayments(idxs){
-  pickPayMethodModal(function(method){
-    const grp=S.curGroup;
-    (idxs||[]).forEach(i=>{
-      if(grp.orders[i]){
-        grp.orders[i].paid=true;
-        grp.orders[i].paidMethod=method;
-        sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:i, paid:true, paidMethod:method});
-      }
-    });
-    saveG();
-    const btn=document.getElementById('paid-confirm-btn');
-    if(btn){ btn.textContent='✅ 已確認付款 ('+payMethodLabel(method)+')'; btn.style.background='#15803d'; btn.disabled=true; }
-    toast('✅ 付款已確認');
+async function confirmAllPayments(idxs, method){
+  if(!method) return;
+  const grp=S.curGroup;
+  (idxs||[]).forEach(i=>{
+    if(grp.orders[i]){
+      grp.orders[i].paid=true;
+      grp.orders[i].paidMethod=method;
+    }
   });
+  saveG();
+  // 同步到 GAS
+  if(GAS_URL){
+    await Promise.all((idxs||[]).map(i =>
+      sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:i, paid:true, paidMethod:method})
+    ));
+  }
+  // 用確認訊息取代原本的三個按鈕區
+  const area = document.getElementById('pay-choice-area');
+  if(area){
+    area.innerHTML = `<div style="width:100%;background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:16px;text-align:center;color:#15803d;font-weight:900;font-size:.95rem">✅ 已記錄:${payMethodLabel(method)}<div style="font-size:.7rem;font-weight:500;margin-top:4px;color:#166534">團主會在訂單清單看到你的付款方式</div></div>`;
+  }
+  toast('✅ 付款方式已記錄 ('+payMethodLabel(method)+')');
 }
 
 // ── 付款方式選擇 modal ──
@@ -1995,20 +2001,10 @@ async function doSubmit(name,total,note,items){
     </div>
 
     <div class="paybox">
-      <div class="pb-t">💳 Step 1：先付款給團主</div>
+      <div class="pb-t">💳 請選擇付款方式</div>
       <div class="pb-a">NT$${total}</div>
-      <div class="pb-s">點下方按鈕直接開啟對應 App 完成轉帳</div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">${payBtns(S.curGroup)}</div>
-    </div>
-
-    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:var(--r);padding:16px;margin-bottom:12px;text-align:center">
-      <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--grn);margin-bottom:8px">Step 2：付款完成後請確認</div>
-      <button id="paid-confirm-btn" class="btn btn-full"
-        style="background:var(--grn);color:#fff;font-size:.95rem"
-        onclick="confirmMyPayment(${myOrderIdx})">
-        💰 我已完成付款
-      </button>
-      <div style="font-size:.7rem;color:var(--ink3);margin-top:6px">按下後訂單清單會顯示「已付款」✅</div>
+      <div class="pb-s">點選後系統會記錄你的付款方式，讓團主知道如何收款</div>
+      <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px">${payBtns(S.curGroup,'confirmMyPayment',[myOrderIdx])}</div>
     </div>
 
     <button class="btn btn-out btn-full" style="margin-bottom:8px" onclick="openGroupDetail('${S.type}');renderGrid()">
@@ -2021,22 +2017,20 @@ async function doSubmit(name,total,note,items){
 // ═══════════════════════════════════════════════
 // CONFIRM MY PAYMENT（同學自己確認付款）
 // ═══════════════════════════════════════════════
-function confirmMyPayment(idx){
+async function confirmMyPayment(idx, method){
   const grp = S.curGroup;
-  if(!grp || !grp.orders || !grp.orders[idx]) return;
-  pickPayMethodModal(function(method){
-    grp.orders[idx].paid = true;
-    grp.orders[idx].paidMethod = method;
-    saveG();
-    sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:idx, paid:true, paidMethod:method});
-    const btn = document.getElementById('paid-confirm-btn');
-    if(btn){
-      btn.textContent = '✅ 已確認付款 ('+payMethodLabel(method)+')';
-      btn.style.background = '#15803d';
-      btn.disabled = true;
-    }
-    toast('✅ 付款已確認 ('+payMethodLabel(method)+')');
-  });
+  if(!grp || !grp.orders || !grp.orders[idx] || !method) return;
+  grp.orders[idx].paid = true;
+  grp.orders[idx].paidMethod = method;
+  saveG();
+  if(GAS_URL){
+    await sendGAS({action:'updateOrderPaid', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, orderIdx:idx, paid:true, paidMethod:method});
+  }
+  const area = document.getElementById('pay-choice-area');
+  if(area){
+    area.innerHTML = `<div style="width:100%;background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:16px;text-align:center;color:#15803d;font-weight:900;font-size:.95rem">✅ 已記錄:${payMethodLabel(method)}<div style="font-size:.7rem;font-weight:500;margin-top:4px;color:#166534">團主會在訂單清單看到你的付款方式</div></div>`;
+  }
+  toast('✅ 付款方式已記錄 ('+payMethodLabel(method)+')');
 }
 
 // ═══════════════════════════════════════════════
