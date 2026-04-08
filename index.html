@@ -702,9 +702,16 @@ function renderGroupDetail(){
   S.curGroup = grp;
   const isDr = S.type==='drink';
   const orders = grp.orders||[];
-  const paid    = orders.filter(function(o){return o.paid;}).length;
   const total   = orders.reduce(function(s,o){return s+(o.total||0);},0);
-  const paidAmt = orders.filter(function(o){return o.paid;}).reduce(function(s,o){return s+(o.total||0);},0);
+
+  // 各付款方式統計
+  const cnt = { linepay:0, ipass:0, cash:0, none:0 };
+  const amt = { linepay:0, ipass:0, cash:0, none:0 };
+  orders.forEach(function(o){
+    const k = (o.paidMethod==='linepay'||o.paidMethod==='ipass'||o.paidMethod==='cash') ? o.paidMethod : 'none';
+    cnt[k]++;
+    amt[k] += o.total||0;
+  });
 
   const grpNum = (S.groups[S.selDate]&&Array.isArray(S.groups[S.selDate][S.type])&&S.groups[S.selDate][S.type].length>1) ? ' #'+(S.curGroupIdx+1) : '';
   document.getElementById('gd-title').textContent=(isDr?'🧋 飲料團':'🍱 便當團')+grpNum+'訂單';
@@ -717,14 +724,22 @@ function renderGroupDetail(){
   } else {
     orders.forEach(function(o,i){
       const items = (o.items||[]).map(function(it){return it.name+' × '+it.qty;}).join('　');
-      const pmIcon = o.paidMethod==='linepay'?'💚':o.paidMethod==='ipass'?'💳':o.paidMethod==='cash'?'💵':'';
-      const pmTxt  = o.paidMethod?' '+pmIcon+' '+payMethodLabel(o.paidMethod):'';
+      let pmBadge;
+      if(o.paidMethod==='linepay'){
+        pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#06c755;color:#fff;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:900">💚 LINE Pay</span>';
+      } else if(o.paidMethod==='ipass'){
+        pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#ee7000;color:#fff;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:900">💳 iPass Money</span>';
+      } else if(o.paidMethod==='cash'){
+        pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#fbbf24;color:#1a1714;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:900">💵 現金</span>';
+      } else {
+        pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;color:#64748b;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:700">— 未選擇</span>';
+      }
       ordersHtml += '<div class="order-card">'
         +'<div class="oc-top"><span class="oc-name">👤 '+o.name+'</span><span class="oc-total">NT$'+o.total+'</span></div>'
         +'<div class="oc-items">'+items+'</div>'
         +(o.note?'<div style="font-size:.72rem;color:var(--ink3);margin-top:3px">📝 '+o.note+'</div>':'')
-        +'<div style="display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">'
-        +'<button class="oc-paid '+(o.paid?'yes':'no')+'" onclick="togglePaid('+i+')" style="flex:1;min-width:120px">'+(o.paid?'✅ 已付款'+pmTxt:'💰 我已付款')+'</button>'
+        +'<div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">'
+        +'<div style="flex:1;min-width:120px">'+pmBadge+'</div>'
         +'<button onclick="startEditOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 修改</button>'
         +'<button onclick="deleteOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🗑 刪除</button>'
         +'</div></div>';
@@ -739,14 +754,14 @@ function renderGroupDetail(){
       +(grp.announcement?'<div style="margin-top:7px;font-size:.76rem;opacity:.9">📢 '+grp.announcement+'</div>':'')
       +'<div class="gd-stats">'
         +'<div class="gd-stat"><span class="v">'+orders.length+'</span><span class="l">總訂單</span></div>'
-        +'<div class="gd-stat"><span class="v" style="color:var(--grn)">'+paid+'</span><span class="l">已付款</span></div>'
-        +'<div class="gd-stat"><span class="v" style="color:#dc2626">'+(orders.length-paid)+'</span><span class="l">未付款</span></div>'
-        +'<div class="gd-stat"><span class="v">NT$'+total+'</span><span class="l">總金額</span></div>'
+        +'<div class="gd-stat"><span class="v" style="color:#86efac">'+cnt.linepay+'</span><span class="l">💚 LINE Pay</span></div>'
+        +'<div class="gd-stat"><span class="v" style="color:#fdba74">'+cnt.ipass+'</span><span class="l">💳 iPass</span></div>'
+        +'<div class="gd-stat"><span class="v" style="color:#fde68a">'+cnt.cash+'</span><span class="l">💵 現金</span></div>'
       +'</div>'
-    +'</div>'
-    +'<div class="pay-summary">'
-      +'<div><div class="ps-label">已收款</div><div class="ps-val" style="color:var(--grn)">NT$'+paidAmt+'</div></div>'
-      +'<div style="text-align:right"><div class="ps-label">未收款</div><div class="ps-val" style="color:#dc2626">NT$'+(total-paidAmt)+'</div></div>'
+      +'<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);display:flex;justify-content:space-between;font-size:.84rem;font-weight:900">'
+        +'<span>總金額</span>'
+        +'<span style="color:#fbbf24;font-family:\'DM Mono\',monospace">NT$'+total+'</span>'
+      +'</div>'
     +'</div>'
     +'<div class="sect">訂單明細（所有人可見）</div>'
     +ordersHtml
