@@ -726,9 +726,10 @@ function renderGroupDetail(){
         +'<div class="oc-top"><span class="oc-name">👤 '+o.name+'</span><span class="oc-total">NT$'+o.total+'</span></div>'
         +'<div class="oc-items">'+items+'</div>'
         +(o.note?'<div style="font-size:.72rem;color:var(--ink3);margin-top:3px">📝 '+o.note+'</div>':'')
-        +'<div style="display:flex;gap:6px;margin-top:6px;align-items:center">'
-        +'<button class="oc-paid '+(o.paid?'yes':'no')+'" onclick="togglePaid('+i+')" style="flex:1">'+(o.paid?'✅ 已付款'+pmTxt:'💰 我已付款')+'</button>'
+        +'<div style="display:flex;gap:6px;margin-top:6px;align-items:center;flex-wrap:wrap">'
+        +'<button class="oc-paid '+(o.paid?'yes':'no')+'" onclick="togglePaid('+i+')" style="flex:1;min-width:120px">'+(o.paid?'✅ 已付款'+pmTxt:'💰 我已付款')+'</button>'
         +'<button onclick="startEditOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 修改</button>'
+        +'<button onclick="deleteOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🗑 刪除</button>'
         +'</div></div>';
     });
   }
@@ -767,6 +768,40 @@ function togglePaid(orderIdx){
   if(GAS_URL) sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx,paid:grp.orders[orderIdx].paid});
   renderGroupDetail();
   toast(grp.orders[orderIdx].paid?'✅ 已標記付款':'已取消付款狀態');
+}
+
+async function deleteOrder(orderIdx){
+  const grp=S.curGroup;
+  if(!grp||!grp.orders||!grp.orders[orderIdx]) return;
+  const o = grp.orders[orderIdx];
+  if(!confirm('確定要刪除「'+o.name+'」的訂單嗎？\n（NT$'+o.total+'，此動作無法復原）')) return;
+  // 先存原資料以便失敗回滾
+  const backup = grp.orders.slice();
+  grp.orders.splice(orderIdx,1);
+  saveG();
+  renderGroupDetail();
+  toast('⏳ 刪除中…');
+  if(GAS_URL){
+    try{
+      const r = await sendGAS({action:'deleteOrder',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx,name:o.name});
+      if(r && r.success === false){
+        // 失敗回滾
+        grp.orders = backup;
+        saveG();
+        renderGroupDetail();
+        toast('❌ 刪除失敗：'+(r.error||''));
+        return;
+      }
+    }catch(e){
+      console.error(e);
+      grp.orders = backup;
+      saveG();
+      renderGroupDetail();
+      toast('❌ 刪除失敗，已還原');
+      return;
+    }
+  }
+  toast('🗑 已刪除「'+o.name+'」的訂單');
 }
 
 function deleteGroup(){
@@ -1467,11 +1502,38 @@ function renderOrderPage(){
       onclick="switchPerson(${i})">${label}${hasItem?' ✓':''}</button>`;
   }).join('');
 
+  // 既有訂單摘要（顯示誰已訂、訂了什麼）
+  const existing = grp.orders||[];
+  const existTotal = existing.reduce((s,o)=>s+(o.total||0),0);
+  let existHtml = '';
+  if(existing.length>0){
+    const rows = existing.map((o,oi)=>{
+      const items = (o.items||[]).map(it=>it.name+'×'+it.qty).join('、');
+      const pmIco = o.paidMethod==='linepay'?'💚':o.paidMethod==='ipass'?'💳':o.paidMethod==='cash'?'💵':'';
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.15);font-size:.76rem">'
+        +'<div style="flex:1;min-width:0">'
+          +'<div style="font-weight:900">👤 '+o.name+(pmIco?' '+pmIco:'')+'</div>'
+          +'<div style="opacity:.85;font-size:.72rem;margin-top:2px;line-height:1.5;word-break:break-all">'+items+'</div>'
+        +'</div>'
+        +'<div style="text-align:right;font-weight:900;font-family:\'DM Mono\',monospace;white-space:nowrap">NT$'+o.total+'</div>'
+      +'</div>';
+    }).join('');
+    existHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18)">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:.78rem;font-weight:900" onclick="toggleExistList(this)">'
+        +'<span>📋 目前已有 '+existing.length+' 人訂購（合計 NT$'+existTotal+'）</span>'
+        +'<span class="exist-arrow">▼</span>'
+      +'</div>'
+      +'<div class="exist-list" style="margin-top:6px;max-height:280px;overflow-y:auto">'+rows+'</div>'
+    +'</div>';
+  } else {
+    existHtml = '<div class="oh-cnt">尚無人訂購，你是第一個！</div>';
+  }
+
   wrap.innerHTML=`
     <div class="ohero ${isDr?'dr':'fo'}">
       <div class="oh-shop">${grp.shopIcon||''} ${grp.shopName}</div>
       <div class="oh-host">👤 團主：${grp.hostName}</div>
-      <div class="oh-cnt">已有 ${(grp.orders||[]).length} 人訂購</div>
+      ${existHtml}
       ${grp.announcement?'<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.15);font-size:.78rem;line-height:1.65">📢 '+grp.announcement+'</div>':''}
     </div>
 
@@ -1509,6 +1571,14 @@ function updatePersonTab(idx){
     return `<button class="opt ${i===S.activePerson?'active':''} ${hasItem?'has-item':''}"
       onclick="switchPerson(${i})">${label}${hasItem?' ✓':''}</button>`;
   }).join('')+'<button class="add-person-btn" onclick="addPerson()">＋幫人點</button>';
+}
+
+function toggleExistList(headerEl){
+  const list = headerEl.parentElement.querySelector('.exist-list');
+  const arrow = headerEl.querySelector('.exist-arrow');
+  if(!list) return;
+  if(list.style.display==='none'){ list.style.display='block'; if(arrow) arrow.textContent='▼'; }
+  else { list.style.display='none'; if(arrow) arrow.textContent='▶'; }
 }
 
 function addPerson(){
