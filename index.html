@@ -687,16 +687,13 @@ function openGroupDetailIdx(type, idx){
 function enterType(type){
   startNewGroup(type);
 }
-function openGroupDetail(type){
-  openGroupDetailIdx(type, 0);
-}
-
 // ═══════════════════════════════════════════════
 // GROUP DETAIL：訂單清單 + 刪除團 + 付款確認
 // ═══════════════════════════════════════════════
 function openGroupDetail(type){
-  // 舊版相容：取第一個團
-  openGroupDetailIdx(type, 0);
+  // 若已有目前團 index 就用該 index，否則取第一個團
+  const idx = (typeof S.curGroupIdx === 'number' && S.curGroupIdx >= 0) ? S.curGroupIdx : 0;
+  openGroupDetailIdx(type, idx);
 }
 
 function renderGroupDetail(){
