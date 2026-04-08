@@ -66,11 +66,14 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .wnav-btn{background:none;border:2px solid var(--bdr);border-radius:8px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
 .wnav-btn:hover{border-color:var(--ink);background:var(--ink);color:#fff}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px}
-.dc{border-radius:8px;border:2px solid var(--bdr);background:var(--sur);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;gap:1px;transition:all .15s;min-height:50px}
+.dc{border-radius:8px;border:2px solid var(--bdr);background:#ffffff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;gap:1px;transition:all .15s;min-height:50px}
+.dc.sat{background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);border-color:#60a5fa;color:#1e3a8a}
+.dc.sun{background:linear-gradient(135deg,#fee2e2 0%,#fecaca 100%);border-color:#f87171;color:#991b1b}
 .dc:hover{border-color:var(--ink)}
 .dc.sel{background:var(--dark);border-color:var(--dark);color:var(--dktx)}
 .dc.has{border-color:var(--gold);background:var(--goldbg)}
 .dc.sel.has{background:var(--dark);border-color:var(--dark);color:var(--dktx)}
+.dc.sat.sel,.dc.sun.sel{background:var(--dark);border-color:var(--dark);color:var(--dktx)}
 .dc .D{font-size:.86rem;font-weight:900;line-height:1}
 .dc .W{font-size:.52rem;opacity:.58}
 .dc .dots{display:flex;gap:2px;margin-top:2px}
@@ -565,7 +568,13 @@ function setGasUrl(url){
   localStorage.setItem('gas_url',url);
   location.reload();
 }
-function fmt(d){ return d.toISOString().slice(0,10); }
+function fmt(d){
+  // 用本地時間組 YYYY-MM-DD，避免 toISOString() 跑掉時區（台灣 +08 會變前一天）
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function dlbl(k){ const d=new Date(k+'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`; }
 
 // ═══════════════════════════════════════════════
@@ -583,8 +592,10 @@ function renderGrid(){
   for(let i=0;i<7;i++){
     const d=new Date(mon); d.setDate(mon.getDate()+i);
     const k=fmt(d), isTd=fmt(today)===k, isSel=k===S.selDate;
+    const dow=d.getDay(); // 0=日 6=六
+    const dayCls = dow===6?' sat':(dow===0?' sun':'');
     const g=S.groups[k]||{}, hDr=!!(Array.isArray(g.drink)?g.drink.length:g.drink), hFo=!!(Array.isArray(g.food)?g.food.length:g.food);
-    h+=`<div class="dc${isSel?' sel':''}${(hDr||hFo)?' has':''}" onclick="selDate('${k}')">
+    h+=`<div class="dc${dayCls}${isSel?' sel':''}${(hDr||hFo)?' has':''}" onclick="selDate('${k}')">
       <span class="D">${d.getDate()}</span>
       <span class="W">${isTd?'今':WD[d.getDay()]}</span>
       ${hDr||hFo?'<div class="dots">'+(hDr?'<span class="dot dr"></span>':'')+(hFo?'<span class="dot fo"></span>':'')+'</div>':''}
