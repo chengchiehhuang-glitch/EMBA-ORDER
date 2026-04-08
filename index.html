@@ -2473,12 +2473,30 @@ function exportPDF(){
 
   const orderRows = orders.map(o=>{
     const pmIco = o.paidMethod==='linepay'?'💚 LINE Pay':o.paidMethod==='ipass'?'💳 iPass Money':o.paidMethod==='cash'?'💵 現金':'—';
+    const itemsHtml = (o.items||[]).map(it=>
+      '<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:.82rem"><span>'+it.name+' ×'+it.qty+'</span><span style="color:#666;font-family:\'DM Mono\',monospace">NT$'+it.sub+'</span></div>'
+    ).join('');
+    const noteHtml = o.note?'<div style="font-size:.74rem;color:#666;margin-top:4px;padding-top:4px;border-top:1px dashed #ddd">📝 '+o.note+'</div>':'';
     return `
     <tr>
-      <td style="padding:9px 12px;border:1px solid #ddd;font-weight:700">${o.name}</td>
-      <td style="padding:9px 12px;border:1px solid #ddd;text-align:center">${pmIco}</td>
-      <td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-weight:700;color:#dc2626">NT$${o.total}</td>
+      <td style="padding:9px 12px;border:1px solid #ddd;font-weight:700;vertical-align:top;white-space:nowrap">${o.name}</td>
+      <td style="padding:9px 12px;border:1px solid #ddd">${itemsHtml}${noteHtml}</td>
+      <td style="padding:9px 12px;border:1px solid #ddd;text-align:center;vertical-align:top;white-space:nowrap">${pmIco}</td>
+      <td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-weight:700;color:#dc2626;vertical-align:top;white-space:nowrap">NT$${o.total}</td>
     </tr>`;}).join('');
+
+  // 飲料品項合併統計（方便團主一次跟店家點）
+  const itemAgg = {};
+  orders.forEach(o=>(o.items||[]).forEach(it=>{
+    const k = it.name;
+    if(!itemAgg[k]) itemAgg[k]={qty:0, sub:0};
+    itemAgg[k].qty += it.qty||0;
+    itemAgg[k].sub += it.sub||0;
+  }));
+  const aggRows = Object.entries(itemAgg).map(([name,v])=>
+    '<tr><td style="padding:7px 10px;border:1px solid #ddd">'+name+'</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center;font-weight:700">×'+v.qty+'</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:right;color:#dc2626;font-weight:700">NT$'+v.sub+'</td></tr>'
+  ).join('');
+  const totalQty = Object.values(itemAgg).reduce((s,v)=>s+v.qty,0);
 
   // Build HTML as string (no template literal nesting)
   let html = '<div id="pdfview" style="font-family:\'Noto Sans TC\',sans-serif;background:#fff;color:#111;padding:0;max-width:100%;position:fixed;inset:0;z-index:9999;overflow-y:auto">';
@@ -2509,12 +2527,19 @@ function exportPDF(){
   if(grp.announcement) html += '<tr><td colspan="4" style="padding:7px 10px;border:1px solid #ddd"><b>📢</b> ' + grp.announcement + '</td></tr>';
   html += '</table>';
 
-  // Orders table — 只顯示 姓名 / 付款方式 / 總金額
-  html += '<div style="font-size:.88rem;font-weight:700;margin-bottom:8px;border-left:4px solid #1a1714;padding-left:10px">訂單明細（共 ' + orders.length + ' 人）</div>';
+  // 品項合併統計表（給團主一次跟店家點）
+  html += '<div style="font-size:.88rem;font-weight:700;margin-bottom:8px;border-left:4px solid #ee7000;padding-left:10px">📞 跟店家點餐用（合併統計，共 ' + totalQty + ' 杯/份）</div>';
   html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.86rem">';
-  html += '<thead><tr style="background:#1a1714;color:#fbbf24"><th style="padding:9px 12px;border:1px solid #333;text-align:left">姓名</th><th style="padding:9px 12px;border:1px solid #333;text-align:center">付款方式</th><th style="padding:9px 12px;border:1px solid #333;text-align:right">總金額</th></tr></thead>';
+  html += '<thead><tr style="background:#ee7000;color:#fff"><th style="padding:9px 12px;border:1px solid #c75800;text-align:left">品項</th><th style="padding:9px 12px;border:1px solid #c75800;text-align:center;width:80px">數量</th><th style="padding:9px 12px;border:1px solid #c75800;text-align:right;width:110px">小計</th></tr></thead>';
+  html += '<tbody>' + aggRows + '</tbody>';
+  html += '<tfoot><tr style="background:#fff7ed;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:center">×' + totalQty + '</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:#dc2626">NT$' + total + '</td></tr></tfoot></table>';
+
+  // Orders table — 姓名 / 品項 / 付款方式 / 總金額
+  html += '<div style="font-size:.88rem;font-weight:700;margin-bottom:8px;border-left:4px solid #1a1714;padding-left:10px">👥 個人訂單明細（共 ' + orders.length + ' 人）</div>';
+  html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.86rem">';
+  html += '<thead><tr style="background:#1a1714;color:#fbbf24"><th style="padding:9px 12px;border:1px solid #333;text-align:left;width:80px">姓名</th><th style="padding:9px 12px;border:1px solid #333;text-align:left">品項</th><th style="padding:9px 12px;border:1px solid #333;text-align:center;width:110px">付款方式</th><th style="padding:9px 12px;border:1px solid #333;text-align:right;width:90px">小計</th></tr></thead>';
   html += '<tbody>' + orderRows + '</tbody>';
-  html += '<tfoot><tr style="background:#f5f5f5;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:center;font-size:.78rem">已收 NT$' + paidAmt + '</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:#dc2626;font-size:1rem">NT$' + total + '</td></tr></tfoot></table>';
+  html += '<tfoot><tr style="background:#f5f5f5;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-size:.78rem">已收 NT$' + paidAmt + '</td><td style="padding:9px 12px;border:1px solid #ddd"></td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:#dc2626;font-size:1rem">NT$' + total + '</td></tr></tfoot></table>';
 
   html += '<div style="text-align:center;font-size:.7rem;color:#999;border-top:1px solid #eee;padding-top:10px">EMBA E118 共學團點餐系統　' + ts + '</div>';
   html += '</div></div>';
