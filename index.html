@@ -1742,10 +1742,10 @@ function goConfirm(){
     <div class="paybox">
       <div class="pb-t">💳 付款給團主 ${grp.hostName}</div>
       <div class="pb-a">NT$${grandTotal}</div>
-      <div class="pb-s">轉帳後請截圖保存</div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">${payBtns(grp)}</div>
+      <div class="pb-s">請先選擇付款方式並按「✅ 確認送出」記錄，再按最下方「確認送出所有訂單」</div>
+      <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px">${payBtns(grp,'stagePayMethod',[])}</div>
     </div>
-    <div class="ibox i-ok">✅ 確認金額無誤後送出</div>
+    <div class="ibox i-ok">✅ 確認金額與付款方式無誤後送出</div>
     <button class="btn btn-dk btn-full" onclick="doSubmitAll()">✅ 確認送出所有訂單</button>
     <button class="btn btn-out btn-full mt8" onclick="go('order')">← 返回修改</button>`;
   go('s-confirm');
@@ -1826,9 +1826,11 @@ function selectPayMethod(btn, method){
       if(sub) sub.textContent = '點擊改選';
     }
   });
-  // 顯示確認/取消區
+  // 顯示確認/取消區 — 只有存在合法 picker 才顯示 (避免 s-confirm 上的付款按鈕靜默失敗)
+  const _picker = group.dataset.picker;
+  const _hasPicker = _picker && _picker !== 'undefined' && typeof window[_picker] === 'function';
   const actions = group.querySelector('.pmg-actions');
-  if(actions) actions.style.display = 'flex';
+  if(actions && _hasPicker) actions.style.display = 'flex';
 }
 
 // ── 取消選擇:回到 idle ──
@@ -1922,18 +1924,26 @@ async function undoCommitPay(btn){
   toast('↩️ 已取消，請重新選擇');
 }
 
+// 在 s-confirm 先暫存付款方式，送出時一併寫入
+function stagePayMethod(method){
+  S._pendingPayMethod = method;
+  toast('✅ 已記錄付款方式 ('+payMethodLabel(method)+')');
+}
+
 async function doSubmitAll(){
   const pendingOrders = S._pendingOrders || [];
   if(!pendingOrders.length){ toast('沒有待送出的訂單'); return; }
+  if(!S._pendingPayMethod){ toast('⚠️ 請先選擇付款方式並按「確認送出」'); return; }
 
   const grp = S.curGroup;
   grp.orders = grp.orders||[];
   const ts = new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'});
   const myOrderIdxs = [];
+  const payMethod = S._pendingPayMethod;
 
   const toSend = [];
   pendingOrders.forEach(p=>{
-    const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:false, ts};
+    const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:true, paidMethod:payMethod, ts};
     grp.orders.push(order);
     myOrderIdxs.push(grp.orders.length-1);
     toSend.push(order);
@@ -1945,14 +1955,23 @@ async function doSubmitAll(){
     await Promise.all(toSend.map(order =>
       sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,order})
     ));
+    // 後端 submitOrder 不寫 paid/paidMethod，需再補一刀 updateOrderPaid
+    await Promise.all(myOrderIdxs.map(i =>
+      sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:i,paid:true,paidMethod:payMethod})
+    ));
   }
-  renderDoneAll(pendingOrders, myOrderIdxs);
+  S._pendingPayMethod = null;
+  renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
   go('s-done');
 }
 
-function renderDoneAll(pendingOrders, myOrderIdxs){
+function renderDoneAll(pendingOrders, myOrderIdxs, payMethod){
   const grp=S.curGroup;
   const grandTotal=pendingOrders.reduce((s,p)=>s+p.total,0);
+  const pmLabel = payMethodLabel(payMethod||'');
+  const pmIco = payMethod==='linepay'?'💚':payMethod==='ipass'?'💳':payMethod==='cash'?'💵':'';
+  const pmBg = payMethod==='linepay'?'#06c755':payMethod==='ipass'?'#ee7000':'#fbbf24';
+  const pmFg = payMethod==='cash'?'#1a1714':'#fff';
   const receiptCards = pendingOrders.map((p,pi)=>`
     <div class="sc" style="margin-bottom:8px">
       <div class="sc-hd">📄 ${p.name} 的收據</div>
@@ -1969,10 +1988,13 @@ function renderDoneAll(pendingOrders, myOrderIdxs){
     </div>
     ${receiptCards}
     <div class="paybox">
-      <div class="pb-t">💳 請選擇付款方式</div>
+      <div class="pb-t">💳 付款給團主 ${grp.hostName}</div>
       <div class="pb-a">NT$${grandTotal}</div>
-      <div class="pb-s">點選後系統會記錄你的付款方式，讓團主知道如何收款</div>
-      <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:10px">${payBtns(grp,'confirmAllPayments',[myOrderIdxs])}</div>
+      <div style="display:inline-flex;align-items:center;gap:10px;background:${pmBg};color:${pmFg};border-radius:10px;padding:14px 22px;font-size:1.05rem;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.15);margin-top:6px">
+        <span style="font-size:1.5rem">${pmIco}</span>
+        <span>已記錄付款方式：${pmLabel}</span>
+      </div>
+      <div style="font-size:.72rem;color:var(--ink2);margin-top:8px">團主會在訂單清單看到此付款方式</div>
     </div>
     <button class="btn btn-out btn-full" style="margin-bottom:8px" onclick="openGroupDetail('${S.type}')">
       📋 查看今日訂單清單
