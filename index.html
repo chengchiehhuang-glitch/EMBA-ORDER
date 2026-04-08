@@ -1974,9 +1974,20 @@ function resetStagedPay(){
 }
 
 async function doSubmitAll(){
+  if(S._submitting) return;
   const pendingOrders = S._pendingOrders || [];
   if(!pendingOrders.length){ toast('沒有待送出的訂單'); return; }
-  if(!S._pendingPayMethod){ toast('⚠️ 請先選擇付款方式並按「確認送出」'); return; }
+  if(!S._pendingPayMethod){
+    toast('⚠️ 請先選擇付款方式');
+    const area = document.getElementById('pay-choice-area');
+    if(area) area.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  S._submitting = true;
+  // 立即鎖定送出按鈕，避免重複點擊
+  const submitBtn = document.querySelector('#s-confirm button.btn-dk');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.style.opacity='.6'; submitBtn.textContent='⏳ 送出中…'; }
+  toast('⏳ 送出訂單中…');
 
   const grp = S.curGroup;
   grp.orders = grp.orders||[];
@@ -2004,6 +2015,7 @@ async function doSubmitAll(){
     ));
   }
   S._pendingPayMethod = null;
+  S._submitting = false;
   renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
   go('s-done');
 }
@@ -2509,7 +2521,7 @@ function exportPDF(){
   html += '</div>';
 
   // Content
-  html += '<div style="padding:20px;max-width:700px;margin:0 auto">';
+  html += '<div id="pdfview-content" style="padding:20px;max-width:700px;margin:0 auto;background:#fff;color:#111;font-family:\'Noto Sans TC\',sans-serif">';
 
   // Header
   html += '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #1a1714;padding-bottom:14px;margin-bottom:18px">';
@@ -2561,15 +2573,30 @@ function doDownloadPDF(){
   if(typeof html2pdf === 'undefined'){ toast('PDF 套件載入中，請稍候再試'); return; }
   const grp = S.curGroup;
   const fname = 'EMBA-E118-'+(S.type==='drink'?'飲料':'便當')+'-'+S.selDate+'-'+(grp?.shopName||'訂單')+'.pdf';
-  const content = el.querySelector('div > div') || el;
+  const content = document.getElementById('pdfview-content');
+  if(!content){ toast('找不到訂單內容'); return; }
   toast('⏳ 產生 PDF 中…');
+  // 把 content clone 到一個固定寬度的離屏容器，避免 fixed/overflow 影響 html2canvas
+  const clone = content.cloneNode(true);
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:absolute;left:-99999px;top:0;width:780px;background:#fff;color:#111;font-family:\'Noto Sans TC\',sans-serif;padding:0';
+  wrap.appendChild(clone);
+  document.body.appendChild(wrap);
   html2pdf().set({
-    margin: 8,
+    margin: [10,10,10,10],
     filename: fname,
-    image: { type:'jpeg', quality:0.95 },
-    html2canvas: { scale:2, useCORS:true, backgroundColor:'#fff' },
-    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
-  }).from(content).save().then(()=>toast('✅ PDF 已下載')).catch(e=>{ console.error(e); toast('❌ 產生失敗'); });
+    image: { type:'jpeg', quality:0.98 },
+    html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff', windowWidth:800, letterRendering:true },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait', compress:true },
+    pagebreak: { mode:['avoid-all','css','legacy'] }
+  }).from(clone).save().then(()=>{
+    toast('✅ PDF 已下載');
+    wrap.remove();
+  }).catch(e=>{
+    console.error(e);
+    toast('❌ 產生失敗，請改用截圖');
+    wrap.remove();
+  });
 }
 
 
