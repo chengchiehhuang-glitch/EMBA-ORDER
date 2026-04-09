@@ -380,9 +380,138 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
     </div>
     <div class="dgrid" id="dgrid"></div>
 
-    <div style="margin-top:24px;text-align:center">
+    <div style="margin-top:20px;text-align:center">
+      <button onclick="go('help')" style="background:#fef3c7;border:2px solid #fbbf24;color:#92400e;border-radius:10px;padding:11px 22px;font-size:.86rem;font-weight:900;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px">📖 操作說明</button>
+    </div>
+
+    <div style="margin-top:16px;text-align:center">
       <button onclick="resetAllData()" style="background:transparent;border:1px solid #e5e7eb;color:#9ca3af;border-radius:8px;padding:6px 14px;font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit">⚙️ 系統重置</button>
     </div>
+
+  </div>
+</div>
+
+<!-- HELP / 操作說明 -->
+<div class="scr" id="s-help">
+  <div class="tb">
+    <button class="tb-bk" onclick="go('land')">←</button>
+    <div><div class="tb-t">📖 操作說明</div><div class="tb-s">EMBA E118 共學團點餐系統</div></div>
+  </div>
+  <div class="wrap">
+
+    <div style="background:#fef3c7;border-left:4px solid #fbbf24;border-radius:10px;padding:14px 16px;margin-bottom:18px">
+      <div style="font-size:.82rem;font-weight:900;color:#92400e;margin-bottom:6px">🎯 系統用途</div>
+      <div style="font-size:.78rem;color:#78350f;line-height:1.7">這是 EMBA E118 同學共學日的飲料／便當揪團點餐系統。任何人都可以開團、加入別人的團、追蹤付款方式，並一鍵匯出 PDF 給店家點餐。</div>
+    </div>
+
+    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:18px 0 10px;border-left:4px solid #1a1714;padding-left:10px">👨‍🍳 開團流程（你是團主）</div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">1️⃣ 選日期</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">在首頁日期格選擇上課日（週六、週日會自動標色）。今天的日期會顯示「今」。</div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">2️⃣ 選類型：飲料 🧋 或便當 🍱</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">同一天可以同時開飲料團和便當團，互不影響。</div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">3️⃣ 選店家或上傳菜單</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        ・<b>從預設清單選</b>：顯示班上累積的店家資料庫，挑一家就好<br>
+        ・<b>📸 拍照上傳菜單</b>：AI 自動辨識品項與價格，辨識完成後可選「儲存到店家清單」讓全班共用<br>
+        ・<b>✏️ 手動建立</b>：自己輸入店名與品項
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">4️⃣ 填寫團主資訊</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">輸入你的名字（會顯示給其他人看），以及可選的公告（例如「下午 2 點截止」）。送出後團就建好了。</div>
+    </div>
+
+    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:24px 0 10px;border-left:4px solid #06c755;padding-left:10px">🛒 點餐流程（你要點餐）</div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">1️⃣ 點進該團 → 我要點餐</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">頂部會顯示目前已有誰訂購，避免漏掉同學。</div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">2️⃣ 選訂購人</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        從下拉選單挑你的名字（內建 22 位 E118 同學），不在名單裡就選「👥 其他」手動輸入。
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">3️⃣ 選品項</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        飲料可選糖度／冰塊。要幫同學一起點，按「＋幫人點」可新增多人訂單一次送出。
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">4️⃣ 選付款方式</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        確認訂單畫面會顯示三個付款方式：
+        <span style="display:inline-block;background:#06c755;color:#fff;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:900;margin:2px">💚 LINE Pay</span>
+        <span style="display:inline-block;background:#ee7000;color:#fff;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:900;margin:2px">💳 iPass Money</span>
+        <span style="display:inline-block;background:#fbbf24;color:#1a1714;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:900;margin:2px">💵 現金</span>
+        <br>單擊即記錄，不用再多按一次確認。
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">5️⃣ 確認送出所有訂單</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">按下後系統會把訂單與付款方式同步到雲端，所有人都看得到。</div>
+    </div>
+
+    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:24px 0 10px;border-left:4px solid #ee7000;padding-left:10px">📋 訂單清單與匯出 PDF</div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">查看訂單清單</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        在團的詳細頁可以看到：<br>
+        ・頂部統計：總訂單數、各付款方式人數（💚 / 💳 / 💵）、總金額<br>
+        ・每筆訂單：訂購人、品項、付款方式 badge、金額<br>
+        ・每筆都可「✏️ 修改」或「🗑 刪除」
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">📄 匯出訂單 PDF</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
+        點「📄 匯出訂單 PDF」會跳出全螢幕預覽：<br>
+        ・上半：<b>📞 跟店家點餐用</b>（合併統計，例如「珍珠奶茶 ×5」）<br>
+        ・下半：<b>👥 個人訂單明細</b>（誰點了什麼、付款方式、金額）<br>
+        右上角按「📥 下載 PDF」直接存成 A4 PDF 檔。團主打電話跟店家點餐就照上半的清單念。
+      </div>
+    </div>
+
+    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:24px 0 10px;border-left:4px solid #dc2626;padding-left:10px">🔧 進階操作</div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">取消整個團</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">在訂單清單頁底部「🗑 取消此次開團」需要班級密碼 <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:900">118</code></div>
+    </div>
+
+    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
+      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">系統重置（清空所有資料）</div>
+      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">首頁底部「⚙️ 系統重置」會清掉所有開團與訂單（保留店家清單），需要密碼 <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:900">118</code>。一般情況不要動！</div>
+    </div>
+
+    <div style="background:#dbeafe;border-left:4px solid #3b82f6;border-radius:10px;padding:14px 16px;margin:18px 0">
+      <div style="font-size:.82rem;font-weight:900;color:#1e3a8a;margin-bottom:6px">💡 小撇步</div>
+      <div style="font-size:.76rem;color:#1e40af;line-height:1.75">
+        ・店家菜單資料是<b>全班共用</b>，只要有人拍過照辨識並儲存，下次大家都看得到<br>
+        ・同一店再拍一次菜單會自動覆蓋舊資料，可以拿來更新價格<br>
+        ・同一天可以同時開好幾個飲料團、好幾個便當團<br>
+        ・進入點餐畫面前會先顯示既有訂單，避免重複下單
+      </div>
+    </div>
+
+    <button class="btn btn-dk btn-full" style="margin-top:20px" onclick="go('land')">← 返回首頁</button>
 
   </div>
 </div>
@@ -2787,7 +2916,7 @@ function doDownloadPDF(){
 // NAV
 // ═══════════════════════════════════════════════
 function go(name){
-  const ids={'land':'s-land','day':'s-day','shop':'s-shop','presets':'s-presets','s-presets':'s-presets','setup':'s-setup','order':'s-order','confirm':'s-confirm','done':'s-done','group':'s-group','s-group':'s-group'};
+  const ids={'land':'s-land','day':'s-day','shop':'s-shop','presets':'s-presets','s-presets':'s-presets','setup':'s-setup','order':'s-order','confirm':'s-confirm','done':'s-done','group':'s-group','s-group':'s-group','help':'s-help'};
   const target=ids[name]||name;
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   document.getElementById(target)?.classList.add('on');
