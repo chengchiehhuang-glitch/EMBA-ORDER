@@ -1515,10 +1515,10 @@ function updateShopMenuModal(shop, items){
     <div class="cf-sheet" style="max-width:380px">
       <div class="cf-title">📸 更新「${shop.name}」菜單</div>
       <div class="cf-msg">辨識到 <b>${items.length}</b> 個品項，將<b>取代</b>此店家的所有現有品項。</div>
-      <div style="max-height:200px;overflow-y:auto;margin:12px 0;padding:8px;background:var(--bg);border-radius:8px;font-size:.76rem">
-        ${items.slice(0,15).map(it=>'<div style="display:flex;justify-content:space-between;padding:2px 0"><span>'+it.name+'</span><span style="color:#dc2626">NT$'+it.price+'</span></div>').join('')}
-        ${items.length>15?'<div style="color:var(--ink3);text-align:center;padding:4px">… 還有 '+(items.length-15)+' 項</div>':''}
+      <div style="max-height:280px;overflow-y:auto;margin:12px 0;padding:8px;background:var(--bg);border-radius:8px;font-size:.76rem">
+        ${items.map(it=>'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bdr)"><span>'+it.name+(it.cat?' <span style="color:var(--ink3);font-size:.65rem">'+it.cat+'</span>':'')+'</span><span style="color:#dc2626;white-space:nowrap;margin-left:8px">NT$'+it.price+'</span></div>').join('')}
       </div>
+      <div style="font-size:.72rem;color:var(--ink2);text-align:center">共 ${items.length} 個品項，確認後將全部取代舊菜單</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button id="usm-confirm" class="btn btn-dk btn-full">✅ 確認更新（取代舊菜單）</button>
         <button id="usm-cancel" class="btn btn-out btn-full">取消</button>
