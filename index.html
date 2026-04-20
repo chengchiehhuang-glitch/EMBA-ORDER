@@ -3892,11 +3892,18 @@ function exportPDF(){
   // Build HTML as string (no template literal nesting)
   let html = '<div id="pdfview" style="font-family:\'Noto Sans TC\',sans-serif;background:#fff;color:#111;padding:0;max-width:100%;position:fixed;inset:0;z-index:9999;overflow-y:auto">';
 
-  // Top bar (hidden on print)
-  html += '<div class="no-print" style="background:var(--v2-ink);color:var(--v2-accent);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">';
-  html += '<button onclick="document.getElementById(\'pdfview\').remove()" style="background:rgba(255,255,255,.15);color:#f5f0e8;border:none;border-radius:7px;padding:8px 12px;font-size:.84rem;font-weight:700;cursor:pointer;font-family:sans-serif">← 返回</button>';
-  html += '<span style="font-size:.85rem;font-weight:700">EMBA E118 訂單</span>';
-  html += '<button onclick="doDownloadPDF()" style="background:var(--v2-accent);color:var(--v2-ink);border:none;border-radius:7px;padding:8px 16px;font-size:.84rem;font-weight:900;cursor:pointer;font-family:sans-serif">📥 下載 PDF</button>';
+  // Top bar (hidden on print) — V2 設計：左返回、中 logo、右下載
+  html += '<div class="no-print" style="background:#3A2E20;color:#F4EDE0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;flex-wrap:nowrap">';
+  // 返回：圓形藥丸 + 清楚的 ← 符號 + 文字
+  html += '<button onclick="document.getElementById(\'pdfview\').remove()" aria-label="返回" style="background:rgba(244,237,224,0.12);color:#F4EDE0;border:1px solid rgba(244,237,224,0.28);border-radius:999px;padding:9px 16px 9px 12px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap" onmouseover="this.style.background=\'rgba(244,237,224,0.22)\'" onmouseout="this.style.background=\'rgba(244,237,224,0.12)\'">';
+  html += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="15 18 9 12 15 6"/></svg>';
+  html += '<span>返回</span></button>';
+  // 中間 title（手機擠壓時會自動截斷）
+  html += '<span style="font-family:\'Noto Serif TC\',serif;font-size:14px;font-weight:500;color:#F4EDE0;letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:center;min-width:0">EMBA E118 訂單</span>';
+  // 下載：焦糖橘藥丸
+  html += '<button onclick="doDownloadPDF()" aria-label="下載 PDF" style="background:#B8723E;color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap" onmouseover="this.style.background=\'#A0632F\'" onmouseout="this.style.background=\'#B8723E\'">';
+  html += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+  html += '<span>下載 PDF</span></button>';
   html += '</div>';
 
   // Content
