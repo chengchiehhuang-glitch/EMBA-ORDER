@@ -530,16 +530,27 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
   letter-spacing:2.4px;text-transform:uppercase;
   color:var(--v2-ink-muted);
 }
+/* Logo — 完整呈現：容器適度放大，圖案用 contain 不裁切 */
 .v2-logo{
-  width:56px;height:56px;border-radius:50%;
-  background:var(--v2-milk);
+  width:64px;height:64px;border-radius:50%;
+  background-color:var(--v2-milk);
   border:1px solid var(--v2-line);
   background-image:var(--v2-logo-url);
-  background-size:118%;background-repeat:no-repeat;background-position:center;
+  background-size:92%;                  /* 稍微留白，字不會貼邊 */
+  background-repeat:no-repeat;
+  background-position:center;
   flex-shrink:0;
+  box-shadow:0 2px 8px rgba(122,78,42,0.06);
 }
-.v2-logo.lg{width:88px;height:88px;background-size:120%}
-.v2-logo.xl{width:128px;height:128px;background-size:122%}
+.v2-logo.lg{
+  width:104px;height:104px;
+  background-size:94%;
+}
+.v2-logo.xl{
+  width:148px;height:148px;
+  background-size:95%;
+  box-shadow:0 6px 24px rgba(122,78,42,0.10);
+}
 
 /* Display 大標 */
 .v2-hero{margin-top:32px;margin-bottom:24px}
