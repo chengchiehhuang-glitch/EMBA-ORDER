@@ -613,10 +613,13 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 /* 團卡（當類型下已有團） */
 .v2-grplist{margin-top:16px;display:flex;flex-direction:column;gap:10px}
 .v2-grp{
-  background:rgba(255,253,248,.55);
-  border-radius:14px;padding:12px 14px;
-  backdrop-filter:blur(4px);
+  background:rgba(255,253,248,.72);
+  border-radius:14px;padding:14px 16px;
+  cursor:pointer;transition:all .18s;
+  border:1px solid transparent;
 }
+.v2-grp:hover{background:rgba(255,253,248,.92);border-color:var(--v2-line-strong)}
+.v2-grp:active{transform:scale(.99)}
 .v2-grp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .v2-grp-shop{
   font-family:var(--v2-serif);font-size:15px;font-weight:500;
@@ -1747,9 +1750,10 @@ function renderDay(){
       grpList.forEach(function(grp,idx){
         var cnt=(grp.orders||[]).length;
         var ann=grp.announcement?('<div class="v2-grp-ann">「'+grp.announcement+'」</div>'):'';
-        var jg="event.stopPropagation();joinGroup(\''+type+'\','+idx+')";
-        var od="event.stopPropagation();openGroupDetailIdx(\''+type+'\','+idx+')";
-        grpCards+='<div class="v2-grp" onclick="event.stopPropagation()">'
+        // 整張卡片 onclick 開訂單清單；內部按鈕用 stopPropagation 才另做動作
+        var cardClickG='openGroupDetailIdx(\''+type+'\','+idx+')';
+        var jg='var e=arguments[0]||window.event;if(e){e.stopPropagation();}joinGroup(\''+type+'\','+idx+')';
+        grpCards+='<div class="v2-grp" onclick="'+cardClickG+'">'
           +'<div class="v2-grp-head">'
           +'<div class="v2-grp-shop">'+(grp.shopName||'未命名店家')+'</div>'
           +'<div class="v2-grp-cnt">'+cnt+' ORDERS</div>'
@@ -1757,17 +1761,18 @@ function renderDay(){
           +'<div class="v2-grp-host">團主 '+(grp.hostName||'—')+'</div>'
           +ann
           +'<div class="v2-grp-acts">'
-          +'<button class="v2-grp-btn join" onclick="'+jg+'">＋ 加入點餐</button>'
-          +'<button class="v2-grp-btn view" onclick="'+od+'">訂單清單</button>'
+          +'<button type="button" class="v2-grp-btn join" onclick="'+jg+'">＋ 加入點餐</button>'
+          +'<button type="button" class="v2-grp-btn view" onclick="'+cardClickG+'">訂單清單</button>'
           +'</div>'
           +'</div>';
       });
       grpCards+='</div>';
       // 已有團時才顯示「開新的團」虛線按鈕
-      grpCards+='<button class="v2-new-grp-btn" onclick="event.stopPropagation();startNewGroup(\''+type+'\')">＋ 再開一個'+name+'團</button>';
+      grpCards+='<button type="button" class="v2-new-grp-btn" onclick="startNewGroup(\''+type+'\')">＋ 再開一個'+name+'團</button>';
     }
 
-    var cardClick=grpList.length?'':' onclick="startNewGroup(\''+type+'\')"';
+    // 外層 type-card：只有在沒有團時才有 onclick（= 開新團）
+    var cardClick=grpList.length?' style="cursor:default"':' onclick="startNewGroup(\''+type+'\')"';
     html+='<div class="v2-type-card v2-'+type+'"'+cardClick+'>'
       +'<div class="v2-type-head">'
       +'<div>'
@@ -1780,7 +1785,7 @@ function renderDay(){
       +'<hr class="v2-type-sep"/>'
       +'<div class="v2-type-foot">'
       +'<span>'+footLeft+'</span>'
-      +(grpList.length?'<span class="pick" onclick="event.stopPropagation();startNewGroup(\''+type+'\')" style="cursor:pointer">開新團'+icoArrow+'</span>'
+      +(grpList.length?'<span class="pick" onclick="startNewGroup(\''+type+'\')" style="cursor:pointer">開新團'+icoArrow+'</span>'
         :'<span class="pick">選這個'+icoArrow+'</span>')
       +'</div>'
       +'</div>';
