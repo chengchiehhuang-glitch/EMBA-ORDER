@@ -663,42 +663,54 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 }
 .v2-type-foot .pick svg{width:12px;height:12px;stroke-width:2}
 
-/* 團卡（當類型下已有團） */
+/* 團卡（當類型下已有團）— 文字顏色鎖死深色，不隨深色模式翻轉 */
 .v2-grplist{margin-top:16px;display:flex;flex-direction:column;gap:10px}
 .v2-grp{
-  background:rgba(255,253,248,.72);
+  background:#FDF9EE;                    /* 固定米白底（亮/深色模式都用同色） */
   border-radius:14px;padding:14px 16px;
   cursor:pointer;transition:all .18s;
-  border:1px solid transparent;
+  border:1px solid rgba(201,184,148,.4); /* 淺描邊 */
 }
-.v2-grp:hover{background:rgba(255,253,248,.92);border-color:var(--v2-line-strong)}
+.v2-grp:hover{background:#FFFDF4;border-color:#C9B894}
 .v2-grp:active{transform:scale(.99)}
 .v2-grp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .v2-grp-shop{
-  font-family:var(--v2-serif);font-size:15px;font-weight:500;
-  color:var(--v2-ink);flex:1;min-width:0;
+  font-family:var(--v2-serif);font-size:15px;font-weight:600;
+  color:#3A2E20;                          /* 鎖深墨 */
+  flex:1;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .v2-grp-cnt{
-  font-family:var(--v2-mono);font-size:10.5px;font-weight:500;
-  letter-spacing:1.6px;color:var(--v2-ink-muted);flex-shrink:0;
+  font-family:var(--v2-mono);font-size:10.5px;font-weight:600;
+  letter-spacing:1.6px;color:#7A4E2A;     /* 鎖焦糖深 — 比 ink-muted 深，更清楚 */
+  flex-shrink:0;
 }
 .v2-grp-host{
-  font-family:var(--v2-sans);font-size:11.5px;color:var(--v2-ink-soft);
+  font-family:var(--v2-sans);font-size:12px;font-weight:500;
+  color:#5A4A34;                          /* 鎖中深墨 */
   margin-top:3px;
 }
 .v2-grp-ann{
   font-family:var(--v2-serif);font-style:italic;font-size:12.5px;
-  color:var(--v2-caramel);margin-top:6px;line-height:1.5;
+  color:#7A4E2A;                          /* 鎖焦糖深 */
+  margin-top:6px;line-height:1.5;
 }
-.v2-grp-acts{display:flex;gap:6px;margin-top:10px}
+.v2-grp-acts{display:flex;gap:6px;margin-top:12px}
 .v2-grp-btn{
-  flex:1;padding:8px 10px;border-radius:999px;
-  font-family:var(--v2-sans);font-size:12px;font-weight:500;
-  cursor:pointer;transition:all .15s;border:none;
+  flex:1;padding:9px 12px;border-radius:999px;
+  font-family:var(--v2-sans);font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:all .15s;
 }
-.v2-grp-btn.join{background:var(--v2-ink);color:var(--v2-cream)}
-.v2-grp-btn.view{background:transparent;color:var(--v2-ink-soft);border:1px solid var(--v2-line-strong)}
+.v2-grp-btn.join{
+  background:#3A2E20;color:#F4EDE0;border:none;
+}
+.v2-grp-btn.join:hover{background:#2A2015}
+.v2-grp-btn.view{
+  background:#FFFFFF;                     /* 固定白底 */
+  color:#3A2E20;                          /* 鎖深墨 */
+  border:1px solid #7A4E2A;               /* 焦糖深邊 */
+}
+.v2-grp-btn.view:hover{background:#FAF3E5;border-color:#5A3A1F}
 .v2-grp-btn:active{transform:scale(.97)}
 
 .v2-new-grp-btn{
