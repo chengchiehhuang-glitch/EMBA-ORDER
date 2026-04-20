@@ -1227,6 +1227,37 @@ body{background:var(--v2-paper)}
 .v2-chip:hover{border-color:var(--v2-caramel);color:var(--v2-ink)}
 .v2-chip.on{background:var(--v2-ink);color:var(--v2-cream);border-color:var(--v2-ink)}
 
+/* 訂單清單內的「修改 / 刪除」小按鈕 — v2 風格 */
+.v2-row-btn{
+  padding:7px 14px;border-radius:999px;
+  font-family:var(--v2-sans);
+  font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s;
+  white-space:nowrap;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.v2-row-btn-edit{
+  background:transparent;
+  color:var(--v2-ink-soft);
+  border:1px solid var(--v2-line-strong);
+}
+.v2-row-btn-edit:hover{
+  background:var(--v2-milk);
+  color:var(--v2-ink);
+  border-color:var(--v2-accent);
+}
+.v2-row-btn-del{
+  background:transparent;
+  color:var(--v2-caramel);
+  border:1px solid var(--v2-caramel);
+  opacity:.75;
+}
+.v2-row-btn-del:hover{
+  background:rgba(122,78,42,.08);
+  opacity:1;
+}
+.v2-row-btn:active{transform:scale(.96)}
+
 /* 訂購人 select — 深淺模式皆清楚 */
 .v2-selwrap{
   position:relative;margin-bottom:10px;
@@ -2034,10 +2065,10 @@ function renderGroupDetail(){
         +'<div class="oc-top"><span class="oc-name">👤 '+o.name+'</span><span class="oc-total">NT$'+oTotal+'</span></div>'
         +'<div class="oc-items">'+items+'</div>'
         +(o.note?'<div style="font-size:.72rem;color:var(--ink3);margin-top:3px">📝 '+o.note+'</div>':'')
-        +'<div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">'
+        +'<div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap">'
         +'<div style="flex:1;min-width:120px">'+pmBadge+'</div>'
-        +'<button onclick="startEditOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 修改</button>'
-        +'<button onclick="deleteOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid #fca5a5;background:#fef2f2;color:var(--v2-caramel);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🗑 刪除</button>'
+        +'<button onclick="startEditOrder('+i+')" class="v2-row-btn v2-row-btn-edit">✏️ 修改</button>'
+        +'<button onclick="deleteOrder('+i+')" class="v2-row-btn v2-row-btn-del">🗑 刪除</button>'
         +'</div></div>';
     });
   }
@@ -3553,10 +3584,30 @@ async function doSubmitAll(){
 
   const toSend = [];
   pendingOrders.forEach(p=>{
-    const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:true, paidMethod:payMethod, ts};
-    grp.orders.push(order);
-    myOrderIdxs.push(grp.orders.length-1);
-    toSend.push(order);
+    // 檢查：這個團裡，這個人是否已經有訂單？
+    const existIdx = grp.orders.findIndex(o => o && o.name === p.name);
+    if(existIdx >= 0){
+      // ★ 同名合併：把新品項併入既有訂單，qty 累加
+      const existing = grp.orders[existIdx];
+      const combinedItems = mergeSameNameItems([...(existing.items||[]), ...(p.items||[])]);
+      const newTotal = combinedItems.reduce((s,it)=>s+calcItemSub(it),0);
+      existing.items = combinedItems;
+      existing.total = newTotal;
+      existing.paid = true;
+      existing.paidMethod = payMethod;
+      if(p.note) existing.note = p.note;
+      existing.ts = ts;
+      myOrderIdxs.push(existIdx);
+      // 傳給 GAS 只送本次新增的 items（讓後端記錄歷史，避免覆蓋既有資料）
+      // 後端用 name 匯總，加進來就對了
+      toSend.push({name:p.name, total:newTotal, note:p.note||existing.note||'', items:p.items, paid:true, paidMethod:payMethod, ts});
+    } else {
+      // 首次下單：照舊新建
+      const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:true, paidMethod:payMethod, ts};
+      grp.orders.push(order);
+      myOrderIdxs.push(grp.orders.length-1);
+      toSend.push(order);
+    }
   });
   saveG();
   // 同步到 GAS (等待完成,確保雲端有資料)
@@ -3681,15 +3732,26 @@ function startEditOrder(orderIdx){
   S.editingOrderIdx = orderIdx;
   const order = S.curGroup.orders[orderIdx];
   if(!order) return;
-  // Reconstruct cart from order items
+  // Reconstruct cart from order items — cart[menuIdx] 要是 cups 陣列 [{sugar,ice},...]
   const menu = S.curGroup.menu||[];
-  const cart={};
-  order.items.forEach(oi=>{
-    const menuIdx = menu.findIndex(m=>m.name===oi.name);
-    if(menuIdx>=0) cart[menuIdx]=oi.qty;
+  const cart = {};
+  (order.items||[]).forEach(oi=>{
+    // 剝除糖冰規格「（半糖/少冰）」還原原始品名
+    const rawName = (oi.name||'').replace(/（[^）]*）$/, '');
+    const menuIdx = menu.findIndex(m=>m.name===rawName);
+    if(menuIdx < 0) return;
+    // 解析糖冰
+    const m = (oi.name||'').match(/（([^/）]+)\/([^）]+)）/);
+    const sugar = m ? m[1].trim() : '';
+    const ice = m ? m[2].trim() : '';
+    if(!cart[menuIdx]) cart[menuIdx] = [];
+    const qty = Number(oi.qty)||0;
+    for(let k=0; k<qty; k++){
+      cart[menuIdx].push({sugar, ice});
+    }
   });
-  S.persons=[{name:order.name, cart, note:order.note||''}];
-  S.activePerson=0;
+  S.persons = [{name:order.name, cart, note:order.note||''}];
+  S.activePerson = 0;
   go('order');
   renderEditOrder();
 }
@@ -3702,22 +3764,22 @@ function renderEditOrder(){
   const menu=grp.menu||[];
   const cart=S.persons[0]?.cart||{};
   document.getElementById('ord-wrap').innerHTML=`
-    <div class="edit-order-card">
-      <div style="font-size:.72rem;font-weight:700;color:var(--gold);margin-bottom:4px">✏️ 修改 ${order?.name} 的訂單</div>
-      <div style="font-size:.76rem;color:var(--ink2)">重新選擇品項後按確認更新</div>
+    <div class="v2-info" style="border-left-color:var(--v2-accent)">
+      <div class="v2-info-title">修改 ${order?.name} 的訂單</div>
+      <div class="v2-info-body">重新調整品項與數量後，按下方「確認更新訂單」即可覆蓋。</div>
     </div>
     <div class="sect">重新選擇品項</div>
     <div class="olist" id="olist"></div>
     <div class="sect">備註</div>
-    <textarea class="fin" style="padding-left:14px;resize:none;height:48px" id="ord-note"
-      placeholder="特殊需求…">${order?.note||''}</textarea>
-    <button class="btn btn-gold btn-full mt12" onclick="saveEditOrder()">💾 確認更新訂單</button>
-    <button class="btn btn-out btn-full mt8" onclick="cancelEdit()">取消</button>
+    <textarea class="v2-sel-input" style="min-height:60px;resize:vertical;font-family:var(--v2-sans);line-height:1.5" id="ord-note"
+      placeholder="特殊需求（選填）">${order?.note||''}</textarea>
+    <button class="btn btn-dk btn-full" style="margin-top:18px" onclick="saveEditOrder()">💾 確認更新訂單</button>
+    <button class="btn btn-out btn-full" style="margin-top:8px" onclick="cancelEdit()">取消</button>
   `;
   renderOList();
 }
 
-function saveEditOrder(){
+async function saveEditOrder(){
   const idx=S.editingOrderIdx;
   const grp=S.curGroup, menu=grp.menu||[];
   const cart=S.persons[0]?.cart||{};
@@ -3734,8 +3796,29 @@ function saveEditOrder(){
   });
   if(!items.length){toast('請至少選一個品項');return;}
   const total=items.reduce((s,it)=>s+it.sub,0);
-  grp.orders[idx]={...grp.orders[idx],items,total,note,editedAt:new Date().toLocaleString('zh-TW')};
+  const original = grp.orders[idx];
+  if(!original){ toast('找不到原訂單'); return; }
+  // 本地更新
+  grp.orders[idx]={...original, items, total, note, editedAt:new Date().toLocaleString('zh-TW')};
   saveG();
+  S._lastWriteAt = Date.now(); // 避免立刻被 syncGAS 覆蓋
+  // 同步到 GAS
+  if(GAS_URL){
+    toast('⏳ 更新雲端中…');
+    const r = await sendGAS({
+      action:'editOrder',
+      dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx,
+      name: original.name, items, total, note
+    });
+    if(!r?.success){
+      toast('⚠️ 雲端更新失敗：'+(r?.error||'未知錯誤'));
+    } else {
+      // 付款方式在 editOrder 後可能被清掉，補一刀
+      if(original.paidMethod){
+        await sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:idx,paid:original.paid,paidMethod:original.paidMethod});
+      }
+    }
+  }
   S.editingOrderIdx=-1; S.persons=[];
   toast('✅ 訂單已更新！');
   renderGroupDetail(); go('s-group');
@@ -3857,6 +3940,22 @@ async function syncGAS(){
     Object.keys(remote).forEach(date=>{
       Object.keys(remote[date]).forEach(type=>{
         if(!Array.isArray(remote[date][type])) remote[date][type]=[remote[date][type]];
+      });
+    });
+    // ★ 合併每筆訂單裡的同名 items（backend 存成多列，這裡 rollup 回來）
+    Object.keys(remote).forEach(date=>{
+      Object.keys(remote[date]).forEach(type=>{
+        (remote[date][type]||[]).forEach(grp=>{
+          if(grp && Array.isArray(grp.orders)){
+            grp.orders.forEach(o=>{
+              if(o && Array.isArray(o.items)){
+                o.items = mergeSameNameItems(o.items);
+                // 重算 total（以防歷史資料 total 錯）
+                o.total = o.items.reduce((s,it)=>s+calcItemSub(it),0);
+              }
+            });
+          }
+        });
       });
     });
     // 深度合併:
@@ -4041,6 +4140,28 @@ function calcItemSub(it){
 }
 function calcOrderTotal(o){
   return (o.items||[]).reduce((s,it)=>s+calcItemSub(it),0);
+}
+
+// 把同名 items 合併為單一 row（qty 與 sub 累加）
+function mergeSameNameItems(items){
+  const map = {};
+  const order = [];  // 保持加入順序
+  (items||[]).forEach(it=>{
+    if(!it || !it.name) return;
+    const k = it.name;
+    const qty = Number(it.qty)||0;
+    const price = Number(it.price)||0;
+    if(!(k in map)){
+      map[k] = { name:k, qty:0, price, sub:0 };
+      order.push(k);
+    }
+    map[k].qty += qty;
+    // sub 用防禦計算
+    map[k].sub += (price && qty) ? price*qty : (Number(it.sub)||0);
+    // 若新 item 有 price 但舊的沒有，用新的
+    if(!map[k].price && price) map[k].price = price;
+  });
+  return order.map(k=>map[k]);
 }
 
 function exportPDF(){
