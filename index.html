@@ -8,27 +8,28 @@
 <meta http-equiv="Expires" content="0">
 <meta name="app-version" content="2026-04-08-v3">
 <title>EMBA E118 共學團點餐系統</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&family=Noto+Serif+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f7f5f1;--sur:#fff;--bdr:#e5e0d8;--bdr2:#ccc8c0;
-  --ink:#1c1917;--ink2:#6b6560;--ink3:#b0aaa3;
-  --dark:#1c1917;--dktx:#f5f0e8;
-  --dr:#0a5c8a;--drbg:#e6f3fb;--drbdr:#a8d4ee;
-  --fo:#8a3a0a;--fobg:#fbede6;--fobdr:#eebda8;
-  --gold:#c98a0a;--goldbg:#fef5d6;
-  --grn:#15803d;--grnbg:#f0fdf4;
-  --r:14px;--r2:10px;
+  /* V2 — 舊變數重新對應到咖啡菜單風色盤（全站統一） */
+  --bg:#FBF7EE;--sur:#FAF6EC;--bdr:#E1D5BE;--bdr2:#C9B894;
+  --ink:#3A2E20;--ink2:#6B5B47;--ink3:#9B8A72;
+  --dark:#3A2E20;--dktx:#F4EDE0;
+  --dr:#7A4E2A;--drbg:#EEDDC0;--drbdr:#C9B894;
+  --fo:#7A4E2A;--fobg:#E5D4B4;--fobdr:#C9B894;
+  --gold:#B8723E;--goldbg:#EFE6D4;
+  --grn:#7A4E2A;--grnbg:#EFE6D4;
+  --r:18px;--r2:14px;
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#141210;--sur:#1e1b18;--bdr:#2e2a26;--bdr2:#3d3830;
-    --ink:#f0ebe3;--ink2:#9b9389;--ink3:#5a5550;
-    --dark:#0e0c0a;--dktx:#f5f0e8;
-    --dr:#4a9ebe;--drbg:#0d2233;--drbdr:#1e4a66;
-    --fo:#d4804a;--fobg:#2a1206;--fobdr:#5c2e10;
-    --gold:#e0a020;--goldbg:#2a1f00;
-    --grn:#22c55e;--grnbg:#052010;
+    --bg:#1a1510;--sur:#1f1810;--bdr:#3d3428;--bdr2:#5a4d3a;
+    --ink:#f0ebe0;--ink2:#b5a890;--ink3:#857560;
+    --dark:#0e0c0a;--dktx:#F4EDE0;
+    --dr:#b88660;--drbg:#3a2e1f;--drbdr:#5a4d3a;
+    --fo:#b88660;--fobg:#44361f;--fobdr:#5a4d3a;
+    --gold:#d48855;--goldbg:#2a2218;
+    --grn:#d48855;--grnbg:#2a2218;
   }
   .fin{color:var(--ink);background:var(--bg)}
   .btn-out{border-color:var(--bdr2);color:var(--ink2)}
@@ -67,8 +68,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .wnav-btn:hover{border-color:var(--ink);background:var(--ink);color:#fff}
 .dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px}
 .dc{border-radius:8px;border:2px solid var(--bdr);background:#ffffff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 2px;gap:1px;transition:all .15s;min-height:50px}
-.dc.sat{background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);border-color:#60a5fa;color:#1e3a8a}
-.dc.sun{background:linear-gradient(135deg,#fee2e2 0%,#fecaca 100%);border-color:#f87171;color:#991b1b}
+.dc.sat{background:linear-gradient(135deg,var(--v2-milk) 0%,var(--v2-line-strong) 100%);border-color:var(--v2-caramel);color:var(--v2-ink)}
+.dc.sun{background:linear-gradient(135deg,var(--v2-food-card) 0%,var(--v2-line-strong) 100%);border-color:var(--v2-caramel);color:var(--v2-caramel)}
 .dc:hover{border-color:var(--ink)}
 .dc.sel{background:var(--dark);border-color:var(--dark);color:var(--dktx)}
 .dc.has{border-color:var(--gold);background:var(--goldbg)}
@@ -100,7 +101,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 
 /* DAY HDR */
 .dhdr{background:var(--dark);border-radius:var(--r);padding:13px 17px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;color:var(--dktx)}
-.dhdr-d{font-size:1.05rem;font-weight:900;color:#fbbf24}
+.dhdr-d{font-size:1.05rem;font-weight:900;color:var(--v2-accent)}
 .dhdr-w{font-size:.67rem;color:rgba(245,240,232,.38);margin-top:2px;font-family:'DM Mono',monospace}
 
 /* SHOP SELECT */
@@ -131,11 +132,11 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 
 /* AI LOADING */
 .aibox{background:var(--dark);border-radius:var(--r);padding:16px;margin-bottom:12px;color:var(--dktx)}
-.ai-shop{font-size:.96rem;font-weight:900;color:#fbbf24;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ai-shop{font-size:.96rem;font-weight:900;color:var(--v2-accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .ai-steps{display:flex;flex-direction:column;gap:6px}
 .aist{display:flex;align-items:center;gap:7px;font-size:.76rem;color:rgba(245,240,232,.55)}
 .aist.done{color:#4ade80}
-.aist.load{color:#fbbf24}
+.aist.load{color:var(--v2-accent)}
 .aist .dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
 .aist.load .dot{animation:pulse .75s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.15}}
@@ -146,9 +147,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .mi-info{flex:1;min-width:0}
 .mi-nm{font-size:.85rem;font-weight:700}
 .mi-cat{font-size:.61rem;color:var(--ink3);font-family:'DM Mono',monospace;margin-top:1px}
-.mi-p{font-size:.86rem;font-weight:700;color:#dc2626;font-family:'DM Mono',monospace;white-space:nowrap}
+.mi-p{font-size:.86rem;font-weight:700;color:var(--v2-caramel);font-family:'DM Mono',monospace;white-space:nowrap}
 .mi-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:.9rem;padding:3px;transition:color .15s;flex-shrink:0}
-.mi-del:hover{color:#dc2626}
+.mi-del:hover{color:var(--v2-caramel)}
 .addrow{display:grid;grid-template-columns:1fr 70px 70px auto;gap:5px}
 .addrow input{border:2px solid var(--bdr);border-radius:8px;padding:8px 9px;font-size:.79rem;outline:none;background:var(--bg);font-family:'Noto Sans TC',sans-serif;transition:border-color .15s}
 .addrow input:focus{border-color:var(--gold)}
@@ -167,11 +168,11 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .oi-nm{font-size:.86rem;font-weight:700}
 .oi-cat{font-size:.61rem;color:var(--ink3);font-family:'DM Mono',monospace;margin-top:1px}
 .oi-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
-.oi-p{font-size:.9rem;font-weight:700;color:#dc2626;font-family:'DM Mono',monospace}
+.oi-p{font-size:.9rem;font-weight:700;color:var(--v2-caramel);font-family:'DM Mono',monospace}
 .qrow{display:flex;align-items:center;gap:5px}
 .qbtn{width:26px;height:26px;border-radius:50%;border:2px solid var(--bdr2);background:var(--bg);cursor:pointer;font-size:.88rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--ink)}
 .qbtn.p{background:var(--dark);border-color:var(--dark);color:var(--dktx)}
-.qbtn.m:hover{background:#dc2626;border-color:#dc2626;color:#fff}
+.qbtn.m:hover{background:var(--v2-caramel);border-color:var(--v2-caramel);color:#fff}
 .qnum{font-size:.85rem;font-weight:700;font-family:'DM Mono',monospace;min-width:15px;text-align:center}
 
 /* PAY SETUP */
@@ -194,12 +195,12 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .sc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:1px solid var(--bdr);font-size:.82rem}
 .sc-row:last-child{border-bottom:none}
 .sc-q{color:var(--gold);font-family:'DM Mono',monospace;font-weight:700;margin-right:4px}
-.sc-p{font-family:'DM Mono',monospace;color:#dc2626;font-weight:700}
+.sc-p{font-family:'DM Mono',monospace;color:var(--v2-caramel);font-weight:700}
 .sc-tot{background:var(--bg);padding:11px 14px;display:flex;justify-content:space-between;font-weight:900}
-.sc-ta{font-size:1.3rem;font-family:'DM Mono',monospace;color:#dc2626}
+.sc-ta{font-size:1.3rem;font-family:'DM Mono',monospace;color:var(--v2-caramel)}
 .paybox{background:var(--sur);border:2px solid var(--gold);border-radius:var(--r);padding:17px;text-align:center;margin-bottom:11px}
 .pb-t{font-size:.66rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:7px}
-.pb-a{font-size:1.95rem;font-weight:900;font-family:'DM Mono',monospace;color:#dc2626;margin-bottom:3px}
+.pb-a{font-size:1.95rem;font-weight:900;font-family:'DM Mono',monospace;color:var(--v2-caramel);margin-bottom:3px}
 .pb-s{font-size:.71rem;color:var(--ink3);margin-bottom:13px}
 .lp-btn{display:inline-flex;align-items:center;gap:6px;background:#06c755;color:#fff;border-radius:8px;padding:10px 18px;font-size:.86rem;font-weight:700;text-decoration:none;font-family:'Noto Sans TC',sans-serif;transition:background .15s}
 .lp-btn:hover{background:#05aa49}
@@ -227,7 +228,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .ibox{border-radius:var(--r2);padding:9px 12px;font-size:.74rem;line-height:1.6;display:flex;gap:6px;margin-bottom:9px}
 .i-ok{background:var(--grnbg);border:1.5px solid #bbf7d0;color:var(--grn)}
 .i-bl{background:var(--drbg);border:1.5px solid var(--drbdr);color:var(--dr)}
-.i-wa{background:#fffbeb;border:1.5px solid #fde68a;color:#92400e}
+.i-wa{background:var(--v2-cream-lt);border:1.5px solid var(--v2-line-strong);color:var(--v2-caramel)}
 
 /* FLOAT BAR */
 .fbar{position:fixed;bottom:0;left:0;right:0;z-index:40;background:var(--sur);border-top:2px solid var(--bdr);padding:10px 15px 18px;display:none}
@@ -235,7 +236,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .fbar-in{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:10px}
 .fbar-inf{flex:1}
 .fbar-l{font-size:.64rem;color:var(--ink3)}
-.fbar-a{font-size:1.2rem;font-weight:900;color:#dc2626;font-family:'DM Mono',monospace}
+.fbar-a{font-size:1.2rem;font-weight:900;color:var(--v2-caramel);font-family:'DM Mono',monospace}
 
 /* SPINNER */
 .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.25);border-top-color:var(--dktx);border-radius:50%;animation:rot .7s linear infinite}
@@ -245,7 +246,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .ssb{background:var(--dark);border-radius:var(--r);padding:13px 15px;margin-bottom:13px;color:var(--dktx);display:flex;align-items:center;gap:11px}
 .ssb-ico{font-size:1.5rem}
 .ssb-info{flex:1}
-.ssb-nm{font-size:.95rem;font-weight:900;color:#fbbf24}
+.ssb-nm{font-size:.95rem;font-weight:900;color:var(--v2-accent)}
 .ssb-ad{font-size:.67rem;color:rgba(245,240,232,.38);margin-top:2px;font-family:'DM Mono',monospace}
 .ssb-chg{background:none;border:1px solid rgba(245,240,232,.22);border-radius:6px;color:rgba(245,240,232,.6);font-size:.69rem;padding:4px 8px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all .15s;white-space:nowrap}
 .ssb-chg:hover{border-color:rgba(245,240,232,.5);color:var(--dktx)}
@@ -294,14 +295,14 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .order-card{background:var(--sur);border:2px solid var(--bdr);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px}
 .oc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .oc-name{font-size:.9rem;font-weight:700}
-.oc-total{font-size:.9rem;font-weight:700;color:#dc2626;font-family:'DM Mono',monospace}
+.oc-total{font-size:.9rem;font-weight:700;color:var(--v2-caramel);font-family:'DM Mono',monospace}
 .oc-items{font-size:.76rem;color:var(--ink2);line-height:1.7}
 .oc-paid{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:50px;cursor:pointer;border:none;font-family:'Noto Sans TC',sans-serif;transition:all .15s;margin-top:6px}
 .oc-paid.yes{background:#dcfce7;color:#15803d}
 .oc-paid.no{background:#fef9c3;color:#854d0e}
 .oc-paid.no:hover{background:#fde047;color:#713f12}
-.del-group-btn{display:flex;align-items:center;gap:6px;width:100%;padding:12px;border-radius:9px;border:2px solid #fecaca;background:#fff5f5;color:#dc2626;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;justify-content:center;transition:all .15s;margin-top:8px}
-.del-group-btn:hover{background:#fee2e2;border-color:#dc2626}
+.del-group-btn{display:flex;align-items:center;gap:6px;width:100%;padding:12px;border-radius:9px;border:2px solid var(--v2-line-strong);background:#fff5f5;color:var(--v2-caramel);font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;justify-content:center;transition:all .15s;margin-top:8px}
+.del-group-btn:hover{background:var(--v2-food-card);border-color:var(--v2-caramel)}
 .pay-summary{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:var(--r2);padding:10px 14px;margin-bottom:12px}
 .ps-label{font-size:.72rem;color:var(--ink2)}
 .ps-val{font-size:.88rem;font-weight:700;font-family:'DM Mono',monospace}
@@ -316,7 +317,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .ocr-progress.on{display:block}
 .ocr-step{display:flex;align-items:center;gap:7px;padding:3px 0}
 .ocr-step .dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
-.ocr-step.load{color:#fbbf24}.ocr-step.load .dot{animation:pulse .8s ease-in-out infinite}
+.ocr-step.load{color:var(--v2-accent)}.ocr-step.load .dot{animation:pulse .8s ease-in-out infinite}
 .ocr-step.done{color:#4ade80}
 .or-divider{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:.72rem;color:var(--ink3)}
 .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--bdr)}
@@ -338,7 +339,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .pshop-menu-item{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:.78rem}
 .pshop-menu-item:last-child{border-bottom:none}
 .pshop-menu-cat{font-size:.65rem;color:var(--ink3);font-family:'DM Mono',monospace;margin-left:6px}
-.pshop-menu-price{font-family:'DM Mono',monospace;color:#dc2626;font-weight:700;flex-shrink:0}
+.pshop-menu-price{font-family:'DM Mono',monospace;color:var(--v2-caramel);font-weight:700;flex-shrink:0}
 
 /* CONFIRM / DELETE MODAL */
 .cf-modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -347,7 +348,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .cf-msg{font-size:.81rem;color:var(--ink2);line-height:1.7;margin-bottom:16px}
 .cf-pw{width:100%;border:2px solid var(--bdr2);border-radius:10px;padding:14px;font-size:1.2rem;font-family:'DM Mono',monospace;letter-spacing:.25em;outline:none;margin-bottom:14px;background:var(--bg);color:var(--ink);text-align:center;display:block}
 .cf-pw:focus{border-color:var(--ink)}
-.cf-pw.err{border-color:#dc2626;animation:shake .3s}
+.cf-pw.err{border-color:var(--v2-caramel);animation:shake .3s}
 .cf-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
 /* PDF PRINT STYLES */
@@ -360,6 +361,781 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
   .print-page:last-child{page-break-after:avoid}
 }
 #pdf-print-area{display:none}
+
+/* ═══════════════════════════════════════════════════════════════
+   V2 設計：咖啡廳菜單風 — 樣板範圍 #s-land, #s-day
+   新 token 不覆蓋舊變數，其他頁面維持原樣
+═══════════════════════════════════════════════════════════════ */
+:root{
+  /* 紙面 */
+  --v2-paper:#FBF7EE;
+  --v2-cream:#F4EDE0;
+  --v2-cream-lt:#FAF6EC;
+  --v2-milk:#EFE6D4;
+  --v2-drink-card:#EEDDC0;
+  --v2-food-card:#E5D4B4;
+
+  /* 墨色 */
+  --v2-ink:#3A2E20;
+  --v2-ink-soft:#6B5B47;
+  --v2-ink-muted:#9B8A72;
+
+  /* 線條 */
+  --v2-line:#E1D5BE;
+  --v2-line-strong:#C9B894;
+
+  /* 點綴 */
+  --v2-accent:#B8723E;
+  --v2-caramel:#7A4E2A;
+
+  /* 字體 */
+  --v2-serif:"Noto Serif TC","Songti TC",serif;
+  --v2-sans:"Noto Sans TC",-apple-system,BlinkMacSystemFont,sans-serif;
+  --v2-mono:"JetBrains Mono","DM Mono","Courier New",monospace;
+  --v2-logo-url:url("data:image/jpeg;base64,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");
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --v2-paper:#1a1510;
+    --v2-cream:#221b13;
+    --v2-cream-lt:#1f1810;
+    --v2-milk:#2a2218;
+    --v2-drink-card:#3a2e1f;
+    --v2-food-card:#44361f;
+    --v2-ink:#f0ebe0;
+    --v2-ink-soft:#b5a890;
+    --v2-ink-muted:#857560;
+    --v2-line:#3d3428;
+    --v2-line-strong:#5a4d3a;
+    --v2-accent:#d48855;
+    --v2-caramel:#b88660;
+  }
+}
+
+/* 整頁底色 */
+#s-land, #s-day{
+  background:var(--v2-paper);
+  color:var(--v2-ink);
+  font-family:var(--v2-sans);
+  min-height:100vh;
+}
+#s-land .wrap, #s-day .wrap{
+  max-width:520px;
+  padding:0 28px 120px;
+}
+
+/* Header：返回 + 標籤 */
+.v2-top{display:flex;align-items:center;justify-content:space-between;padding:28px 0 10px;min-height:70px}
+.v2-back{
+  width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--v2-line);background:transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  color:var(--v2-ink);transition:all .2s;flex-shrink:0;
+}
+.v2-back:hover{background:var(--v2-milk);border-color:var(--v2-line-strong)}
+.v2-back:active{transform:scale(.96)}
+.v2-back svg{width:16px;height:16px;stroke-width:2}
+.v2-tag{
+  font-family:var(--v2-mono);font-size:11px;font-weight:500;
+  letter-spacing:2.4px;text-transform:uppercase;
+  color:var(--v2-ink-muted);
+}
+.v2-logo{
+  width:56px;height:56px;border-radius:50%;
+  background:var(--v2-milk);
+  border:1px solid var(--v2-line);
+  background-image:var(--v2-logo-url);
+  background-size:118%;background-repeat:no-repeat;background-position:center;
+  flex-shrink:0;
+}
+.v2-logo.lg{width:88px;height:88px;background-size:120%}
+.v2-logo.xl{width:128px;height:128px;background-size:122%}
+
+/* Display 大標 */
+.v2-hero{margin-top:32px;margin-bottom:24px}
+.v2-display{
+  font-family:var(--v2-serif);
+  font-size:38px;font-weight:500;
+  line-height:1.12;letter-spacing:-.5px;
+  color:var(--v2-ink);margin:0;
+}
+.v2-sub{
+  font-family:var(--v2-serif);font-style:italic;
+  font-size:14px;color:var(--v2-ink-soft);
+  margin-top:18px;font-weight:400;
+}
+
+/* 月份切換列 */
+.v2-mnav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0;margin-top:28px;
+  border-top:1px solid var(--v2-line);
+  border-bottom:1px solid var(--v2-line);
+}
+.v2-mnav-lbl{
+  font-family:var(--v2-mono);font-size:11px;font-weight:500;
+  letter-spacing:2.8px;text-transform:uppercase;
+  color:var(--v2-ink-soft);
+}
+.v2-mnav-btn{
+  width:32px;height:32px;border-radius:50%;border:none;background:transparent;
+  color:var(--v2-ink-soft);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.v2-mnav-btn:hover{background:var(--v2-milk);color:var(--v2-ink)}
+.v2-mnav-btn:active{transform:scale(.92)}
+.v2-mnav-btn svg{width:14px;height:14px;stroke-width:2}
+
+/* 日期列表 */
+.v2-dlist{margin:0}
+.v2-drow{
+  display:grid;
+  grid-template-columns:auto 52px 1fr auto 14px;
+  gap:14px;align-items:center;
+  padding:18px 2px;
+  border-bottom:1px solid var(--v2-line);
+  cursor:pointer;transition:all .2s;
+  position:relative;
+}
+.v2-drow:hover{background:var(--v2-cream-lt)}
+.v2-drow:active{transform:scale(.995)}
+.v2-drow-wd{
+  font-family:var(--v2-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:2.2px;text-transform:uppercase;
+  color:var(--v2-ink-muted);min-width:34px;
+}
+.v2-drow-day{
+  font-family:var(--v2-serif);font-size:30px;font-weight:500;
+  line-height:1;color:var(--v2-ink);text-align:right;
+  letter-spacing:-.5px;
+}
+.v2-drow-stat{
+  font-family:var(--v2-sans);font-size:13px;
+  color:var(--v2-ink-soft);line-height:1.4;
+}
+.v2-drow-stat .muted{color:var(--v2-ink-muted)}
+.v2-drow-counts{
+  font-family:var(--v2-mono);font-size:11px;
+  letter-spacing:.5px;color:var(--v2-ink-muted);
+}
+.v2-drow-chev{
+  color:var(--v2-ink-muted);display:flex;align-items:center;
+}
+.v2-drow-chev svg{width:12px;height:12px;stroke-width:1.8}
+/* 今日 */
+.v2-drow.today .v2-drow-wd,
+.v2-drow.today .v2-drow-day{color:var(--v2-accent)}
+.v2-drow.today::before{
+  content:"";position:absolute;left:-14px;top:50%;
+  transform:translateY(-50%);
+  width:6px;height:6px;border-radius:50%;
+  background:var(--v2-accent);
+}
+/* 週末弱化灰 */
+.v2-drow.wkend .v2-drow-day{color:var(--v2-ink-soft)}
+.v2-drow.wkend.today .v2-drow-day{color:var(--v2-accent)}
+
+/* 主 CTA：深色藥丸 */
+.v2-cta{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--v2-ink);color:var(--v2-cream);
+  border:none;border-radius:999px;
+  padding:18px 22px 18px 28px;
+  font-family:var(--v2-serif);font-size:17px;font-weight:500;
+  width:100%;cursor:pointer;transition:all .2s;margin-top:36px;
+  box-shadow:0 10px 28px rgba(58,46,32,.18);
+}
+.v2-cta:hover{transform:translateY(-1px);box-shadow:0 14px 34px rgba(58,46,32,.22)}
+.v2-cta:active{transform:scale(.98)}
+.v2-cta-caret{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--v2-accent);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.v2-cta-caret svg{width:16px;height:16px;stroke:#fff;stroke-width:2}
+
+/* 說明連結（小字次按鈕） */
+.v2-link-row{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:22px;
+  font-family:var(--v2-mono);font-size:11px;font-weight:500;
+  letter-spacing:2.2px;text-transform:uppercase;
+  color:var(--v2-ink-muted);cursor:pointer;
+  background:none;border:none;padding:10px;width:100%;
+  transition:color .2s;
+}
+.v2-link-row:hover{color:var(--v2-accent)}
+.v2-link-row svg{width:12px;height:12px;stroke-width:1.8}
+
+/* ── s-day 選類型 ── */
+.v2-type-stack{display:flex;flex-direction:column;gap:16px;margin-top:12px}
+.v2-type-card{
+  border-radius:24px;padding:26px 26px 22px;
+  cursor:pointer;transition:all .25s;
+  position:relative;overflow:hidden;
+  border:1px solid rgba(122,78,42,.08);
+}
+.v2-type-card.v2-drink{background:var(--v2-drink-card)}
+.v2-type-card.v2-food{background:var(--v2-food-card)}
+.v2-type-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(58,46,32,.12)}
+.v2-type-card:active{transform:scale(.99)}
+.v2-type-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.v2-type-kicker{
+  font-family:var(--v2-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:3px;text-transform:uppercase;
+  color:var(--v2-caramel);opacity:.72;
+}
+.v2-type-name{
+  font-family:var(--v2-serif);font-size:40px;font-weight:500;
+  line-height:1;color:var(--v2-ink);margin-top:6px;
+  letter-spacing:-.5px;
+}
+.v2-type-ico{
+  width:56px;height:56px;flex-shrink:0;
+  color:var(--v2-caramel);opacity:.82;
+  display:flex;align-items:center;justify-content:center;
+}
+.v2-type-ico svg{width:48px;height:48px;stroke-width:1.4;fill:none;stroke:currentColor}
+.v2-type-sep{
+  border:0;border-top:1px dashed var(--v2-line-strong);
+  margin:20px 0 14px;opacity:.7;
+}
+.v2-type-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-family:var(--v2-sans);font-size:13px;color:var(--v2-ink-soft);
+}
+.v2-type-foot .pick{
+  font-family:var(--v2-serif);font-size:14px;font-weight:500;
+  color:var(--v2-caramel);display:flex;align-items:center;gap:6px;
+}
+.v2-type-foot .pick svg{width:12px;height:12px;stroke-width:2}
+
+/* 團卡（當類型下已有團） */
+.v2-grplist{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.v2-grp{
+  background:rgba(255,253,248,.55);
+  border-radius:14px;padding:12px 14px;
+  backdrop-filter:blur(4px);
+}
+.v2-grp-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.v2-grp-shop{
+  font-family:var(--v2-serif);font-size:15px;font-weight:500;
+  color:var(--v2-ink);flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.v2-grp-cnt{
+  font-family:var(--v2-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:1.6px;color:var(--v2-ink-muted);flex-shrink:0;
+}
+.v2-grp-host{
+  font-family:var(--v2-sans);font-size:11.5px;color:var(--v2-ink-soft);
+  margin-top:3px;
+}
+.v2-grp-ann{
+  font-family:var(--v2-serif);font-style:italic;font-size:12.5px;
+  color:var(--v2-caramel);margin-top:6px;line-height:1.5;
+}
+.v2-grp-acts{display:flex;gap:6px;margin-top:10px}
+.v2-grp-btn{
+  flex:1;padding:8px 10px;border-radius:999px;
+  font-family:var(--v2-sans);font-size:12px;font-weight:500;
+  cursor:pointer;transition:all .15s;border:none;
+}
+.v2-grp-btn.join{background:var(--v2-ink);color:var(--v2-cream)}
+.v2-grp-btn.view{background:transparent;color:var(--v2-ink-soft);border:1px solid var(--v2-line-strong)}
+.v2-grp-btn:active{transform:scale(.97)}
+
+.v2-new-grp-btn{
+  width:100%;margin-top:14px;padding:12px;
+  background:transparent;border:1px dashed var(--v2-line-strong);
+  border-radius:999px;cursor:pointer;
+  font-family:var(--v2-serif);font-size:13.5px;font-weight:500;
+  color:var(--v2-caramel);transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.v2-new-grp-btn:hover{background:rgba(184,114,62,.06)}
+.v2-new-grp-btn:active{transform:scale(.99)}
+
+/* Icon defaults */
+.v2-ico{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:inline-block;vertical-align:middle}
+
+/* ══════════════════════════════════════════════════════════
+   V2 全站覆寫 — 套用到 s-help / s-shop / s-presets / s-setup
+   s-order / s-confirm / s-done / s-group
+══════════════════════════════════════════════════════════ */
+#s-help, #s-shop, #s-presets, #s-setup, #s-order, #s-confirm, #s-done, #s-group{
+  background:var(--v2-paper);
+  color:var(--v2-ink);
+  font-family:var(--v2-sans);
+}
+#s-help .wrap, #s-shop .wrap, #s-presets .wrap, #s-setup .wrap,
+#s-order .wrap, #s-confirm .wrap, #s-done .wrap, #s-group .wrap{
+  max-width:520px;padding:18px 26px 120px;
+}
+
+/* === 頂部 Nav Bar 覆寫 === */
+#s-help .tb, #s-shop .tb, #s-presets .tb, #s-setup .tb,
+#s-order .tb, #s-confirm .tb, #s-done .tb, #s-group .tb{
+  background:var(--v2-paper);color:var(--v2-ink);
+  padding:18px 26px 10px;box-shadow:none;
+  border-bottom:1px solid var(--v2-line);
+  position:sticky;top:0;z-index:50;gap:14px;
+}
+#s-help .tb-bk, #s-shop .tb-bk, #s-presets .tb-bk, #s-setup .tb-bk,
+#s-order .tb-bk, #s-confirm .tb-bk, #s-done .tb-bk, #s-group .tb-bk{
+  width:40px;height:40px;border-radius:50%;
+  border:1px solid var(--v2-line);background:transparent;
+  color:var(--v2-ink);font-size:0;opacity:1;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  position:relative;
+}
+#s-help .tb-bk::before, #s-shop .tb-bk::before, #s-presets .tb-bk::before, #s-setup .tb-bk::before,
+#s-order .tb-bk::before, #s-confirm .tb-bk::before, #s-done .tb-bk::before, #s-group .tb-bk::before{
+  content:"";width:10px;height:10px;
+  border-left:2px solid var(--v2-ink);
+  border-bottom:2px solid var(--v2-ink);
+  transform:rotate(45deg);margin-left:4px;
+}
+#s-help .tb-bk:hover, #s-shop .tb-bk:hover, #s-presets .tb-bk:hover, #s-setup .tb-bk:hover,
+#s-order .tb-bk:hover, #s-confirm .tb-bk:hover, #s-done .tb-bk:hover, #s-group .tb-bk:hover{
+  background:var(--v2-milk);border-color:var(--v2-line-strong);
+}
+#s-help .tb-t, #s-shop .tb-t, #s-presets .tb-t, #s-setup .tb-t,
+#s-order .tb-t, #s-confirm .tb-t, #s-done .tb-t, #s-group .tb-t{
+  font-family:var(--v2-serif);font-weight:500;font-size:16px;
+  color:var(--v2-ink);flex:1;letter-spacing:-.2px;
+}
+#s-help .tb-s, #s-shop .tb-s, #s-presets .tb-s, #s-setup .tb-s,
+#s-order .tb-s, #s-confirm .tb-s, #s-done .tb-s, #s-group .tb-s{
+  font-family:var(--v2-mono);font-size:10.5px;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--v2-ink-muted);margin-top:2px;
+}
+
+/* === Section 標題（.sect）覆寫 === */
+#s-shop .sect, #s-presets .sect, #s-setup .sect, #s-order .sect,
+#s-confirm .sect, #s-done .sect, #s-group .sect{
+  font-family:var(--v2-mono);font-size:11px;font-weight:500;
+  letter-spacing:2.4px;text-transform:uppercase;
+  color:var(--v2-ink-muted);margin:24px 0 12px;
+  display:flex;align-items:center;gap:12px;
+}
+#s-shop .sect::after, #s-presets .sect::after, #s-setup .sect::after,
+#s-order .sect::after, #s-confirm .sect::after, #s-done .sect::after,
+#s-group .sect::after{
+  content:"";flex:1;height:1px;background:var(--v2-line);
+}
+
+/* === 搜尋框（.fin, .fwrap, .ficon）=== */
+#s-shop .fwrap, #s-presets .fwrap, #s-setup .fwrap, #s-order .fwrap,
+#s-confirm .fwrap, #s-done .fwrap, #s-group .fwrap, #s-day .fwrap{
+  position:relative;margin-bottom:14px;
+}
+#s-shop .fin, #s-presets .fin, #s-setup .fin, #s-order .fin,
+#s-confirm .fin, #s-done .fin, #s-group .fin, #s-day .fin{
+  width:100%;
+  border:1px solid var(--v2-line);
+  border-radius:14px;
+  padding:14px 16px 14px 42px;
+  font-size:14px;font-family:var(--v2-sans);
+  background:var(--v2-milk);color:var(--v2-ink);
+  outline:none;transition:all .2s;
+}
+#s-shop .fin:focus, #s-presets .fin:focus, #s-setup .fin:focus, #s-order .fin:focus,
+#s-confirm .fin:focus, #s-done .fin:focus, #s-group .fin:focus, #s-day .fin:focus{
+  border-color:var(--v2-line-strong);background:var(--v2-cream-lt);
+}
+#s-shop .ficon, #s-presets .ficon, #s-setup .ficon, #s-order .ficon,
+#s-confirm .ficon, #s-done .ficon, #s-group .ficon, #s-day .ficon{
+  position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  font-size:0;width:16px;height:16px;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239B8A72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.5' y2='16.5'/%3E%3C/svg%3E");
+  background-size:contain;background-repeat:no-repeat;
+}
+#s-shop .fdrop, #s-presets .fdrop, #s-setup .fdrop, #s-order .fdrop,
+#s-confirm .fdrop, #s-done .fdrop, #s-group .fdrop, #s-day .fdrop{
+  position:absolute;top:calc(100% - 2px);left:0;right:0;
+  background:var(--v2-paper);
+  border:1px solid var(--v2-line);border-top:none;
+  border-radius:0 0 14px 14px;z-index:30;
+  max-height:280px;overflow-y:auto;display:none;
+  box-shadow:0 12px 28px rgba(58,46,32,.12);
+}
+
+/* === Or Divider === */
+#s-shop .or-divider, #s-presets .or-divider, #s-setup .or-divider,
+#s-order .or-divider, #s-confirm .or-divider, #s-done .or-divider, #s-group .or-divider, #s-day .or-divider{
+  display:flex;align-items:center;gap:12px;margin:22px 0 16px;
+  font-family:var(--v2-mono);font-size:10.5px;letter-spacing:2.4px;
+  text-transform:uppercase;color:var(--v2-ink-muted);
+}
+#s-shop .or-divider::before, #s-presets .or-divider::before, #s-setup .or-divider::before,
+#s-order .or-divider::before, #s-confirm .or-divider::before, #s-done .or-divider::before,
+#s-group .or-divider::before, #s-day .or-divider::before,
+#s-shop .or-divider::after, #s-presets .or-divider::after, #s-setup .or-divider::after,
+#s-order .or-divider::after, #s-confirm .or-divider::after, #s-done .or-divider::after,
+#s-group .or-divider::after, #s-day .or-divider::after{
+  content:"";flex:1;height:1px;background:var(--v2-line);
+}
+
+/* === 日期 Header（.dhdr）=== */
+#s-shop .dhdr, #s-presets .dhdr, #s-setup .dhdr, #s-order .dhdr,
+#s-confirm .dhdr, #s-done .dhdr, #s-group .dhdr, #s-day .dhdr{
+  background:transparent;
+  border:1px solid var(--v2-line);
+  border-radius:16px;
+  padding:16px 18px;margin-bottom:18px;
+  display:flex;align-items:center;justify-content:space-between;
+  color:var(--v2-ink);
+}
+#s-shop .dhdr-d, #s-presets .dhdr-d, #s-setup .dhdr-d, #s-order .dhdr-d,
+#s-confirm .dhdr-d, #s-done .dhdr-d, #s-group .dhdr-d, #s-day .dhdr-d{
+  font-family:var(--v2-serif);font-size:18px;font-weight:500;
+  color:var(--v2-ink);
+}
+#s-shop .dhdr-w, #s-presets .dhdr-w, #s-setup .dhdr-w, #s-order .dhdr-w,
+#s-confirm .dhdr-w, #s-done .dhdr-w, #s-group .dhdr-w, #s-day .dhdr-w{
+  font-family:var(--v2-mono);font-size:10.5px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--v2-ink-muted);margin-top:3px;
+}
+
+/* === AI 上傳區（.upload-menu-box）=== */
+#s-shop .upload-menu-box, #s-setup .upload-menu-box, #s-order .upload-menu-box,
+#s-presets .upload-menu-box, #s-group .upload-menu-box{
+  border:1.5px dashed var(--v2-line-strong);
+  border-radius:16px;
+  padding:26px 20px;text-align:center;cursor:pointer;
+  background:rgba(184,114,62,.04);
+  transition:all .2s;margin-bottom:12px;
+}
+#s-shop .upload-menu-box:hover, #s-setup .upload-menu-box:hover,
+#s-order .upload-menu-box:hover, #s-presets .upload-menu-box:hover,
+#s-group .upload-menu-box:hover{
+  border-color:var(--v2-accent);background:rgba(184,114,62,.08);
+}
+#s-shop .upload-menu-box.has, #s-setup .upload-menu-box.has,
+#s-order .upload-menu-box.has, #s-presets .upload-menu-box.has,
+#s-group .upload-menu-box.has{
+  border-style:solid;border-color:var(--v2-caramel);
+  background:var(--v2-milk);
+}
+#s-shop .upload-menu-txt, #s-setup .upload-menu-txt, #s-order .upload-menu-txt,
+#s-presets .upload-menu-txt, #s-group .upload-menu-txt{
+  font-family:var(--v2-serif);font-size:14px;font-weight:500;
+  color:var(--v2-ink-soft);margin-top:10px;
+}
+
+/* === 按鈕（.btn）=== */
+#s-help .btn, #s-shop .btn, #s-presets .btn, #s-setup .btn,
+#s-order .btn, #s-confirm .btn, #s-done .btn, #s-group .btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:14px 22px;border-radius:999px;border:none;
+  font-family:var(--v2-sans);font-size:14px;font-weight:500;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+#s-help .btn-dk, #s-shop .btn-dk, #s-presets .btn-dk, #s-setup .btn-dk,
+#s-order .btn-dk, #s-confirm .btn-dk, #s-done .btn-dk, #s-group .btn-dk{
+  background:var(--v2-ink);color:var(--v2-cream);
+  font-family:var(--v2-serif);font-size:15px;
+}
+#s-help .btn-dk:hover, #s-shop .btn-dk:hover, #s-presets .btn-dk:hover, #s-setup .btn-dk:hover,
+#s-order .btn-dk:hover, #s-confirm .btn-dk:hover, #s-done .btn-dk:hover, #s-group .btn-dk:hover{
+  background:var(--v2-caramel);
+}
+#s-help .btn-out, #s-shop .btn-out, #s-presets .btn-out, #s-setup .btn-out,
+#s-order .btn-out, #s-confirm .btn-out, #s-done .btn-out, #s-group .btn-out{
+  background:transparent;color:var(--v2-ink-soft);
+  border:1px solid var(--v2-line-strong);
+}
+#s-help .btn-out:hover, #s-shop .btn-out:hover, #s-presets .btn-out:hover, #s-setup .btn-out:hover,
+#s-order .btn-out:hover, #s-confirm .btn-out:hover, #s-done .btn-out:hover, #s-group .btn-out:hover{
+  background:var(--v2-milk);color:var(--v2-ink);border-color:var(--v2-caramel);
+}
+#s-help .btn-gold, #s-shop .btn-gold, #s-presets .btn-gold, #s-setup .btn-gold,
+#s-order .btn-gold, #s-confirm .btn-gold, #s-done .btn-gold, #s-group .btn-gold{
+  background:var(--v2-accent);color:#fff;
+}
+#s-help .btn-full, #s-shop .btn-full, #s-presets .btn-full, #s-setup .btn-full,
+#s-order .btn-full, #s-confirm .btn-full, #s-done .btn-full, #s-group .btn-full{width:100%}
+#s-help .btn:active, #s-shop .btn:active, #s-presets .btn:active, #s-setup .btn:active,
+#s-order .btn:active, #s-confirm .btn:active, #s-done .btn:active, #s-group .btn:active{transform:scale(.98)}
+
+/* === 卡片（.sc, .order-card）=== */
+#s-shop .sc, #s-presets .sc, #s-setup .sc, #s-order .sc,
+#s-confirm .sc, #s-done .sc, #s-group .sc{
+  background:var(--v2-cream-lt);
+  border:1px solid var(--v2-line);
+  border-radius:16px;padding:16px;margin-bottom:12px;
+}
+#s-shop .order-card, #s-presets .order-card, #s-setup .order-card, #s-order .order-card,
+#s-confirm .order-card, #s-done .order-card, #s-group .order-card{
+  background:var(--v2-cream-lt);
+  border:1px solid var(--v2-line);
+  border-radius:14px;padding:14px 16px;margin-bottom:10px;
+}
+
+/* === 精選店家卡（.pshop-card）=== */
+#s-presets .pshop-card, #s-shop .pshop-card{
+  background:var(--v2-paper);
+  border:none;border-bottom:1px solid var(--v2-line);
+  border-radius:0;margin-bottom:0;
+  transition:background .2s;
+}
+#s-presets .pshop-card:hover, #s-shop .pshop-card:hover{
+  background:var(--v2-cream-lt);border-color:var(--v2-line);
+}
+#s-presets .pshop-card.open, #s-shop .pshop-card.open{
+  background:var(--v2-cream-lt);
+}
+
+/* === 浮動底部購物車（.fbar）=== */
+#s-order .fbar, .fbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:40;
+  background:transparent;border:none;
+  padding:0 16px 24px;display:none;
+}
+#s-order .fbar.on, .fbar.on{display:block}
+#s-order .fbar-in, .fbar-in{
+  max-width:520px;margin:0 auto;
+  background:var(--v2-ink);color:var(--v2-cream);
+  border-radius:22px;padding:16px 18px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 14px 38px rgba(58,46,32,.28);
+}
+#s-order .fbar-inf, .fbar-inf{flex:1}
+#s-order .fbar-l, .fbar-l{
+  font-family:var(--v2-mono);font-size:10px;letter-spacing:2.5px;
+  text-transform:uppercase;color:rgba(244,237,224,.55);
+}
+#s-order .fbar-a, .fbar-a{
+  font-family:var(--v2-serif);font-size:22px;font-weight:500;
+  color:var(--v2-cream);margin-top:2px;
+}
+#s-order .fbar .btn-dk, .fbar .btn-dk{
+  background:var(--v2-accent);color:#fff;
+  padding:12px 20px;border-radius:999px;
+}
+#s-order .fbar .btn-dk:hover, .fbar .btn-dk:hover{background:var(--v2-caramel)}
+
+/* === 表單輸入（.addrow input）=== */
+#s-shop .addrow input, #s-presets .addrow input, #s-setup .addrow input, #s-order .addrow input,
+#s-confirm .addrow input, #s-done .addrow input, #s-group .addrow input{
+  border:none;border-bottom:1px solid var(--v2-line);
+  border-radius:0;padding:10px 2px;font-size:14px;
+  background:transparent;color:var(--v2-ink);
+  font-family:var(--v2-sans);
+}
+#s-shop .addrow input:focus, #s-presets .addrow input:focus, #s-setup .addrow input:focus,
+#s-order .addrow input:focus, #s-confirm .addrow input:focus, #s-done .addrow input:focus,
+#s-group .addrow input:focus{border-bottom-color:var(--v2-accent);}
+
+/* === 付款方式卡（.paybox）=== */
+#s-confirm .paybox, #s-done .paybox, #s-order .paybox, #s-group .paybox{
+  background:var(--v2-cream-lt);
+  border:1px solid var(--v2-line);
+  border-radius:18px;padding:20px 18px;
+  text-align:center;margin-bottom:12px;
+}
+
+/* === Modal === */
+#s-order .modal-sheet, .modal-sheet,
+#s-shop .modal-sheet, #s-setup .modal-sheet, #s-group .modal-sheet,
+#s-confirm .modal-sheet, #s-presets .modal-sheet, #s-done .modal-sheet{
+  background:var(--v2-paper);
+  border-radius:24px 24px 0 0;
+  padding:24px 26px 36px;
+}
+.cf-sheet{
+  background:var(--v2-paper);
+  border-radius:20px;
+}
+.cf-title{
+  font-family:var(--v2-serif);font-size:18px;font-weight:500;color:var(--v2-ink);
+}
+.cf-msg{color:var(--v2-ink-soft);font-size:13.5px;line-height:1.65}
+.cf-pw{
+  border:1px solid var(--v2-line);background:var(--v2-milk);
+  color:var(--v2-ink);border-radius:14px;
+  font-family:var(--v2-mono);letter-spacing:.25em;
+}
+.cf-pw:focus{border-color:var(--v2-accent);background:var(--v2-cream-lt)}
+
+/* Dark mode adjustments for v2 */
+@media (prefers-color-scheme: dark){
+  #s-help, #s-shop, #s-presets, #s-setup, #s-order, #s-confirm, #s-done, #s-group{
+    background:var(--v2-paper);color:var(--v2-ink);
+  }
+}
+
+/* Body 整體背景色 */
+body{background:var(--v2-paper)}
+
+/* Toast */
+#toast{
+  font-family:var(--v2-sans);
+  background:var(--v2-ink);color:var(--v2-cream);
+  border-radius:999px;padding:12px 22px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Shared V2 元件 — 跨頁使用
+══════════════════════════════════════════════════════════ */
+
+/* Hero 卡片（訂單詳情頁用） */
+.v2-hero-card{
+  background:var(--v2-drink-card);
+  border-radius:24px;padding:22px 22px 20px;margin-bottom:18px;
+  position:relative;overflow:hidden;
+}
+.v2-hero-card.food{background:var(--v2-food-card)}
+.v2-hero-kicker{
+  font-family:var(--v2-mono);font-size:10.5px;letter-spacing:2.8px;
+  text-transform:uppercase;color:var(--v2-caramel);opacity:.75;
+}
+.v2-hero-title{
+  font-family:var(--v2-serif);font-size:26px;font-weight:500;
+  color:var(--v2-ink);margin-top:6px;letter-spacing:-.3px;line-height:1.2;
+}
+.v2-hero-ann{
+  font-family:var(--v2-serif);font-style:italic;font-size:13.5px;
+  color:var(--v2-caramel);margin-top:10px;line-height:1.5;
+}
+.v2-hero-stats{
+  display:flex;gap:22px;margin-top:16px;
+  padding-top:14px;border-top:1px dashed var(--v2-line-strong);opacity:.9;
+}
+.v2-hero-stat-l{
+  font-family:var(--v2-mono);font-size:9.5px;letter-spacing:2.2px;
+  text-transform:uppercase;color:var(--v2-caramel);opacity:.7;
+}
+.v2-hero-stat-v{
+  font-family:var(--v2-serif);font-size:18px;font-weight:500;
+  color:var(--v2-ink);margin-top:3px;
+}
+
+/* Info 盒子（說明頁用） */
+.v2-info{
+  background:var(--v2-milk);border-radius:16px;
+  padding:16px 18px;margin-bottom:18px;
+  border-left:3px solid var(--v2-accent);
+}
+.v2-info-title{
+  font-family:var(--v2-serif);font-size:14px;font-weight:500;
+  color:var(--v2-ink);margin-bottom:6px;
+}
+.v2-info-body{
+  font-family:var(--v2-sans);font-size:13px;line-height:1.7;color:var(--v2-ink-soft);
+}
+
+/* 步驟卡（說明頁用） */
+.v2-step-sect{
+  font-family:var(--v2-mono);font-size:11px;font-weight:500;
+  letter-spacing:2.8px;text-transform:uppercase;
+  color:var(--v2-caramel);margin:28px 0 10px;
+  display:flex;align-items:center;gap:12px;
+}
+.v2-step-sect::before{content:"";width:20px;height:1px;background:var(--v2-accent)}
+.v2-step-sect::after{content:"";flex:1;height:1px;background:var(--v2-line)}
+.v2-step{
+  background:var(--v2-cream-lt);
+  border:1px solid var(--v2-line);
+  border-radius:16px;padding:16px 18px;margin-bottom:10px;
+  display:grid;grid-template-columns:28px 1fr;gap:14px;align-items:start;
+}
+.v2-step-num{
+  font-family:var(--v2-serif);font-size:22px;font-weight:500;
+  color:var(--v2-caramel);line-height:1;margin-top:-2px;letter-spacing:-.5px;
+}
+.v2-step-t{
+  font-family:var(--v2-serif);font-size:15px;font-weight:500;
+  color:var(--v2-ink);margin-bottom:5px;
+}
+.v2-step-b{
+  font-family:var(--v2-sans);font-size:13px;line-height:1.65;color:var(--v2-ink-soft);
+}
+.v2-step-b b{color:var(--v2-ink);font-weight:500}
+.v2-step-b code{
+  background:var(--v2-milk);padding:1px 8px;border-radius:6px;
+  font-family:var(--v2-mono);font-size:11.5px;color:var(--v2-caramel);
+}
+
+/* 付款 pill badge（說明頁內） */
+.v2-pay-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:999px;
+  font-family:var(--v2-mono);font-size:10.5px;font-weight:500;
+  letter-spacing:.5px;margin:2px 3px;
+}
+.v2-pay-pill.line{background:#e7f9ef;color:#0b7a3d}
+.v2-pay-pill.ipass{background:#fdeede;color:#a3541c}
+.v2-pay-pill.cash{background:var(--v2-milk);color:var(--v2-caramel)}
+@media (prefers-color-scheme: dark){
+  .v2-pay-pill.line{background:#0d2a18;color:#50d18e}
+  .v2-pay-pill.ipass{background:#331d0a;color:#e5a564}
+}
+
+/* 大標與副標（內頁用） */
+.v2-ihero{margin:10px 0 22px}
+.v2-ititle{
+  font-family:var(--v2-serif);font-size:28px;font-weight:500;
+  line-height:1.2;letter-spacing:-.3px;color:var(--v2-ink);margin:0;
+}
+.v2-isub{
+  font-family:var(--v2-serif);font-style:italic;font-size:13.5px;
+  color:var(--v2-ink-soft);margin-top:12px;
+}
+
+/* 店家列表 Row */
+.v2-shop-row{
+  display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;
+  padding:16px 2px;border-bottom:1px solid var(--v2-line);
+  cursor:pointer;transition:all .2s;
+}
+.v2-shop-row:hover{background:var(--v2-cream-lt)}
+.v2-shop-avatar{
+  width:52px;height:52px;border-radius:50%;
+  background:var(--v2-milk);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--v2-serif);font-size:20px;font-weight:500;
+  color:var(--v2-caramel);
+}
+.v2-shop-name{
+  font-family:var(--v2-serif);font-size:16px;font-weight:500;color:var(--v2-ink);
+}
+.v2-shop-sub{
+  font-family:var(--v2-sans);font-size:12px;color:var(--v2-ink-soft);margin-top:3px;
+}
+.v2-shop-meta{
+  font-family:var(--v2-mono);font-size:10.5px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--v2-ink-muted);
+}
+
+/* Chip（糖度/冰塊/時間選擇） */
+.v2-chip{
+  display:inline-flex;align-items:center;
+  padding:6px 14px;border-radius:999px;cursor:pointer;
+  background:var(--v2-cream-lt);
+  border:1px solid var(--v2-line);
+  font-family:var(--v2-serif);font-size:12.5px;font-weight:500;
+  color:var(--v2-ink-soft);transition:all .15s;margin:3px;
+}
+.v2-chip:hover{border-color:var(--v2-caramel);color:var(--v2-ink)}
+.v2-chip.on{background:var(--v2-ink);color:var(--v2-cream);border-color:var(--v2-ink)}
+
+/* 底線式輸入（開團設定用） */
+.v2-line-input{
+  width:100%;border:none;border-bottom:1px solid var(--v2-line);
+  background:transparent;padding:10px 2px 8px;
+  font-family:var(--v2-serif);font-size:18px;font-weight:500;
+  color:var(--v2-ink);outline:none;transition:border-color .2s;
+}
+.v2-line-input::placeholder{color:var(--v2-ink-muted);font-style:italic;font-weight:400}
+.v2-line-input:focus{border-bottom-color:var(--v2-accent)}
+.v2-line-input-label{
+  font-family:var(--v2-mono);font-size:10.5px;letter-spacing:2.2px;
+  text-transform:uppercase;color:var(--v2-ink-muted);margin-bottom:4px;display:block;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js/dist/html2pdf.bundle.min.js"></script>
 </head>
@@ -368,25 +1144,42 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 <!-- LANDING -->
 <div class="scr on" id="s-land">
   <div class="wrap" style="padding-top:0">
-    <div class="hero">
-      <img src="data:image/jpeg;base64,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" alt="NCKU EMBA 118" style="width:90px;height:90px;border-radius:16px;object-fit:cover;margin-bottom:10px;box-shadow:0 4px 20px rgba(0,0,0,.15)">
-      <div class="hero-t">EMBA E118<br>共學團點餐系統</div>
-      <div class="hero-s">選日期 → 飲料或便當 → 選店開團<br>內建菜單即時顯示，或上傳菜單照片 AI 辨識</div>
-    </div>
-    <div class="wnav">
-      <button class="wnav-btn" onclick="shiftW(-1)">‹</button>
-      <span style="font-size:.77rem;font-weight:700;color:var(--ink2)" id="w-lbl"></span>
-      <button class="wnav-btn" onclick="shiftW(1)">›</button>
-    </div>
-    <div class="dgrid" id="dgrid"></div>
 
-    <div style="margin-top:20px;text-align:center">
-      <button onclick="go('help')" style="background:#fef3c7;border:2px solid #fbbf24;color:#92400e;border-radius:10px;padding:11px 22px;font-size:.86rem;font-weight:900;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px">📖 操作說明</button>
+    <div class="v2-top">
+      <span class="v2-tag">NCKU EMBA 118 · S.L.C.</span>
+      <div class="v2-logo" aria-label="NCKU EMBA 118 S.L.C."></div>
     </div>
 
-    <div style="margin-top:16px;text-align:center">
-      <button onclick="resetAllData()" style="background:transparent;border:1px solid #e5e7eb;color:#9ca3af;border-radius:8px;padding:6px 14px;font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit">⚙️ 系統重置</button>
+    <div class="v2-hero">
+      <h1 class="v2-display">今天想一起<br>喝點什麼？</h1>
+      <p class="v2-sub" id="v2-land-sub">— 讀取中…</p>
     </div>
+
+    <div class="v2-mnav">
+      <button class="v2-mnav-btn" onclick="shiftW(-1)" aria-label="上一週">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="v2-mnav-lbl" id="w-lbl"></span>
+      <button class="v2-mnav-btn" onclick="shiftW(1)" aria-label="下一週">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div class="v2-dlist" id="dgrid"></div>
+
+    <button class="v2-cta" onclick="v2StartNewToday()">
+      <span>開一個新的團</span>
+      <span class="v2-cta-caret">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </span>
+    </button>
+
+    <button class="v2-link-row" onclick="go('help')">
+      <svg class="v2-ico" viewBox="0 0 24 24" fill="none"><path d="M4 5a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="14" y2="15"/></svg>
+      <span>操作說明</span>
+    </button>
+
+    <button onclick="resetAllData()" style="display:none" aria-hidden="true">系統重置</button>
 
   </div>
 </div>
@@ -394,148 +1187,191 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 <!-- HELP / 操作說明 -->
 <div class="scr" id="s-help">
   <div class="tb">
-    <button class="tb-bk" onclick="go('land')">←</button>
-    <div><div class="tb-t">📖 操作說明</div><div class="tb-s">EMBA E118 共學團點餐系統</div></div>
+    <button class="tb-bk" onclick="go('land')" aria-label="返回"></button>
+    <div>
+      <div class="tb-t">操作說明</div>
+      <div class="tb-s">USER GUIDE</div>
+    </div>
+    <div class="v2-logo" style="width:40px;height:40px;background-size:120%"></div>
   </div>
+
   <div class="wrap">
 
-    <div style="background:#fef3c7;border-left:4px solid #fbbf24;border-radius:10px;padding:14px 16px;margin-bottom:18px">
-      <div style="font-size:.82rem;font-weight:900;color:#92400e;margin-bottom:6px">🎯 系統用途</div>
-      <div style="font-size:.78rem;color:#78350f;line-height:1.7">這是 EMBA E118 同學共學日的飲料／便當揪團點餐系統。任何人都可以開團、加入別人的團、追蹤付款方式，並一鍵匯出 PDF 給店家點餐。</div>
+    <div style="text-align:center;margin:28px 0 22px">
+      <div class="v2-logo xl" style="margin:0 auto 18px"></div>
+      <h1 class="v2-ititle">EMBA E118<br>共學團點餐系統</h1>
+      <p class="v2-isub">— 從選日期、開團、點餐、到印 PDF 給店家</p>
     </div>
 
-    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:18px 0 10px;border-left:4px solid #1a1714;padding-left:10px">👨‍🍳 開團流程（你是團主）</div>
-
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">1️⃣ 選日期</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">在首頁日期格選擇上課日（週六、週日會自動標色）。今天的日期會顯示「今」。</div>
+    <div class="v2-info">
+      <div class="v2-info-title">系統用途</div>
+      <div class="v2-info-body">EMBA E118 同學共學日的飲料／便當揪團系統。任何人都可以開團、加入別人的團、追蹤付款方式，並一鍵匯出 PDF 給店家點餐。</div>
     </div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">2️⃣ 選類型：飲料 🧋 或便當 🍱</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">同一天可以同時開飲料團和便當團，互不影響。</div>
-    </div>
+    <div class="v2-step-sect">01 · 開團流程</div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">3️⃣ 選店家或上傳菜單</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
-        ・<b>從預設清單選</b>：顯示班上累積的店家資料庫，挑一家就好<br>
-        ・<b>📸 拍照上傳菜單</b>：AI 自動辨識品項與價格，辨識完成後可選「儲存到店家清單」讓全班共用<br>
-        ・<b>✏️ 手動建立</b>：自己輸入店名與品項
+    <div class="v2-step">
+      <div class="v2-step-num">1</div>
+      <div>
+        <div class="v2-step-t">選日期</div>
+        <div class="v2-step-b">首頁日期列表挑上課日，今日會以 <b>橘點＋橘字</b> 標示。</div>
       </div>
     </div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">4️⃣ 填寫團主資訊</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">輸入你的名字（會顯示給其他人看），以及可選的公告（例如「下午 2 點截止」）。送出後團就建好了。</div>
-    </div>
-
-    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:24px 0 10px;border-left:4px solid #06c755;padding-left:10px">🛒 點餐流程（你要點餐）</div>
-
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">1️⃣ 點進該團 → 我要點餐</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">頂部會顯示目前已有誰訂購，避免漏掉同學。</div>
-    </div>
-
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">2️⃣ 選訂購人</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
-        從下拉選單挑你的名字（內建 22 位 E118 同學），不在名單裡就選「👥 其他」手動輸入。
+    <div class="v2-step">
+      <div class="v2-step-num">2</div>
+      <div>
+        <div class="v2-step-t">選類型：飲料或便當</div>
+        <div class="v2-step-b">同一天可同時開飲料團與便當團，互不影響。</div>
       </div>
     </div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">3️⃣ 選品項</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
-        飲料可選糖度／冰塊。要幫同學一起點，按「＋幫人點」可新增多人訂單一次送出。
+    <div class="v2-step">
+      <div class="v2-step-num">3</div>
+      <div>
+        <div class="v2-step-t">選店家或上傳菜單</div>
+        <div class="v2-step-b">
+          ・<b>從精選清單選</b>：班上累積的店家資料庫<br>
+          ・<b>拍照上傳菜單</b>：AI 自動辨識品項價格，可存到全班共用<br>
+          ・<b>手動建立</b>：自己輸入店名與品項
+        </div>
       </div>
     </div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">4️⃣ 選付款方式</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
-        確認訂單畫面會顯示三個付款方式：
-        <span style="display:inline-block;background:#06c755;color:#fff;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:900;margin:2px">💚 LINE Pay</span>
-        <span style="display:inline-block;background:#ee7000;color:#fff;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:900;margin:2px">💳 iPass Money</span>
-        <span style="display:inline-block;background:#fbbf24;color:#1a1714;padding:2px 8px;border-radius:5px;font-size:.7rem;font-weight:900;margin:2px">💵 現金</span>
-        <br>單擊即記錄，不用再多按一次確認。
+    <div class="v2-step">
+      <div class="v2-step-num">4</div>
+      <div>
+        <div class="v2-step-t">填寫團主資訊</div>
+        <div class="v2-step-b">輸入名字（會顯示給同學看），公告選填（例：「下午 2 點截止」）。送出即完成。</div>
       </div>
     </div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">5️⃣ 確認送出所有訂單</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">按下後系統會把訂單與付款方式同步到雲端，所有人都看得到。</div>
-    </div>
+    <div class="v2-step-sect">02 · 點餐流程</div>
 
-    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:24px 0 10px;border-left:4px solid #ee7000;padding-left:10px">📋 訂單清單與匯出 PDF</div>
-
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">查看訂單清單</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
-        在團的詳細頁可以看到：<br>
-        ・頂部統計：總訂單數、各付款方式人數（💚 / 💳 / 💵）、總金額<br>
-        ・每筆訂單：訂購人、品項、付款方式 badge、金額<br>
-        ・每筆都可「✏️ 修改」或「🗑 刪除」
+    <div class="v2-step">
+      <div class="v2-step-num">1</div>
+      <div>
+        <div class="v2-step-t">點進該團 · 我要點餐</div>
+        <div class="v2-step-b">頂部會顯示目前已有誰訂購，避免漏掉同學。</div>
       </div>
     </div>
 
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">📄 匯出訂單 PDF</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">
-        點「📄 匯出訂單 PDF」會跳出全螢幕預覽：<br>
-        ・上半：<b>📞 跟店家點餐用</b>（合併統計，例如「珍珠奶茶 ×5」）<br>
-        ・下半：<b>👥 個人訂單明細</b>（誰點了什麼、付款方式、金額）<br>
-        右上角按「📥 下載 PDF」直接存成 A4 PDF 檔。團主打電話跟店家點餐就照上半的清單念。
+    <div class="v2-step">
+      <div class="v2-step-num">2</div>
+      <div>
+        <div class="v2-step-t">選訂購人</div>
+        <div class="v2-step-b">從下拉選單挑你的名字（內建 22 位 E118 同學），不在名單就選「其他」手動輸入。</div>
       </div>
     </div>
 
-    <div style="font-size:.95rem;font-weight:900;color:var(--ink);margin:24px 0 10px;border-left:4px solid #dc2626;padding-left:10px">🔧 進階操作</div>
-
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">取消整個團</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">在訂單清單頁底部「🗑 取消此次開團」需要班級密碼 <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:900">118</code></div>
-    </div>
-
-    <div style="background:#fff;border:1.5px solid var(--bdr);border-radius:10px;padding:14px;margin-bottom:10px">
-      <div style="font-weight:900;color:#1a1714;margin-bottom:6px">系統重置（清空所有資料）</div>
-      <div style="font-size:.78rem;color:var(--ink2);line-height:1.7">首頁底部「⚙️ 系統重置」會清掉所有開團與訂單（保留店家清單），需要密碼 <code style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:900">118</code>。一般情況不要動！</div>
-    </div>
-
-    <div style="background:#dbeafe;border-left:4px solid #3b82f6;border-radius:10px;padding:14px 16px;margin:18px 0">
-      <div style="font-size:.82rem;font-weight:900;color:#1e3a8a;margin-bottom:6px">💡 小撇步</div>
-      <div style="font-size:.76rem;color:#1e40af;line-height:1.75">
-        ・店家菜單資料是<b>全班共用</b>，只要有人拍過照辨識並儲存，下次大家都看得到<br>
-        ・同一店再拍一次菜單會自動覆蓋舊資料，可以拿來更新價格<br>
-        ・同一天可以同時開好幾個飲料團、好幾個便當團<br>
-        ・進入點餐畫面前會先顯示既有訂單，避免重複下單
+    <div class="v2-step">
+      <div class="v2-step-num">3</div>
+      <div>
+        <div class="v2-step-t">選品項</div>
+        <div class="v2-step-b">飲料可選糖度／冰塊。要幫同學一起點，按「＋幫人點」可新增多人訂單一次送出。</div>
       </div>
     </div>
 
-    <button class="btn btn-dk btn-full" style="margin-top:20px" onclick="go('land')">← 返回首頁</button>
+    <div class="v2-step">
+      <div class="v2-step-num">4</div>
+      <div>
+        <div class="v2-step-t">選付款方式</div>
+        <div class="v2-step-b">
+          確認訂單會顯示三個付款方式：
+          <span class="v2-pay-pill line">LINE PAY</span>
+          <span class="v2-pay-pill ipass">iPASS MONEY</span>
+          <span class="v2-pay-pill cash">CASH</span>
+          單擊即記錄。
+        </div>
+      </div>
+    </div>
+
+    <div class="v2-step">
+      <div class="v2-step-num">5</div>
+      <div>
+        <div class="v2-step-t">確認送出訂單</div>
+        <div class="v2-step-b">系統會把訂單與付款方式同步到雲端 Google Sheets，全班都看得到。</div>
+      </div>
+    </div>
+
+    <div class="v2-step-sect">03 · 訂單清單與 PDF</div>
+
+    <div class="v2-step">
+      <div class="v2-step-num">A</div>
+      <div>
+        <div class="v2-step-t">查看訂單清單</div>
+        <div class="v2-step-b">在團的詳細頁可看：頂部統計（總訂單數、各付款方式人數、總金額）、每筆訂單可修改或刪除。</div>
+      </div>
+    </div>
+
+    <div class="v2-step">
+      <div class="v2-step-num">B</div>
+      <div>
+        <div class="v2-step-t">匯出訂單 PDF</div>
+        <div class="v2-step-b">
+          「匯出訂單 PDF」會顯示：<br>
+          ・上半 <b>給店家點餐用</b>（合併統計，例如「珍珠奶茶 ×5」）<br>
+          ・下半 <b>個人訂單明細</b>（誰點了什麼、付款方式、金額）<br>
+          右上「下載 PDF」存成 A4 檔。團主打電話念上半即可。
+        </div>
+      </div>
+    </div>
+
+    <div class="v2-step-sect">04 · 進階操作</div>
+
+    <div class="v2-step">
+      <div class="v2-step-num">·</div>
+      <div>
+        <div class="v2-step-t">取消整個團</div>
+        <div class="v2-step-b">在訂單清單頁底部「取消此次開團」，需要班級密碼 <code>118</code>。</div>
+      </div>
+    </div>
+
+    <div class="v2-step">
+      <div class="v2-step-num">·</div>
+      <div>
+        <div class="v2-step-t">系統重置（清空所有資料）</div>
+        <div class="v2-step-b">進階操作，需要密碼 <code>118</code>。一般情況不要動！</div>
+      </div>
+    </div>
+
+    <div class="v2-info" style="border-left-color:var(--v2-caramel);margin-top:22px">
+      <div class="v2-info-title">小撇步</div>
+      <div class="v2-info-body">
+        ・店家菜單是<b>全班共用</b>，任何人拍照辨識並儲存後，其他人也看得到<br>
+        ・同一店再拍一次會自動覆蓋舊資料，可用來更新價格<br>
+        ・同一天可同時開多個飲料團／便當團<br>
+        ・進入點餐前會先顯示既有訂單，避免重複下單
+      </div>
+    </div>
+
+    <button class="btn btn-dk btn-full" style="margin-top:24px" onclick="go('land')">← 返回首頁</button>
 
   </div>
 </div>
 
 <!-- DAY VIEW -->
 <div class="scr" id="s-day">
-  <div class="tb">
-    <button class="tb-bk" onclick="go('land')">←</button>
-    <div><div class="tb-t" id="day-t">選擇類型</div><div class="tb-s">飲料或便當</div></div>
-  </div>
-  <div class="wrap">
-    <div class="dhdr">
-      <div><div class="dhdr-d" id="day-d"></div><div class="dhdr-w" id="day-w"></div></div>
-      <div style="font-size:1.8rem">📅</div>
+  <div class="wrap" style="padding-top:0">
+
+    <div class="v2-top">
+      <button class="v2-back" onclick="go('land')" aria-label="返回">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="v2-tag" id="day-tag">STEP · 01 / 04</span>
+      <span style="width:40px"></span>
     </div>
-    <div class="sect">🔍 全店搜尋（店名或品項）</div>
-    <div class="fwrap" id="gfwrap" style="margin-bottom:14px">
-      <span class="ficon">🔍</span>
-      <input class="fin" id="gfin" placeholder="輸入店名或品項，如：五十、滷肉飯、奶茶…" autocomplete="off"
-        oninput="globalFuzzy(this.value)" onkeydown="globalFuzzyKey(event)">
-      <div class="fdrop" id="gfdrop"></div>
+
+    <div class="v2-hero">
+      <p class="v2-tag" id="day-d" style="display:block;margin-bottom:12px"></p>
+      <h1 class="v2-display" id="day-display">今天要開<br>哪一種團？</h1>
+      <p class="v2-sub" id="day-sub">— 飲料團與便當團可以同天並存</p>
     </div>
-    <div class="or-divider">── 或選擇類型 ──</div>
-    <div class="trow" id="trow"></div>
+
+    <div class="v2-type-stack" id="trow"></div>
+
+    <span id="day-t" style="display:none"></span>
+    <span id="day-w" style="display:none"></span>
 
   </div>
 </div>
@@ -543,32 +1379,45 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 <!-- SHOP SELECT -->
 <div class="scr" id="s-shop">
   <div class="tb">
-    <button class="tb-bk" onclick="go('day')">←</button>
-    <div><div class="tb-t" id="shop-t">選擇店家</div><div class="tb-s" id="shop-s">選完後 AI 自動抓菜單</div></div>
+    <button class="tb-bk" onclick="go('day')" aria-label="返回"></button>
+    <div>
+      <div class="tb-t" id="shop-t">選一家店</div>
+      <div class="tb-s" id="shop-s">STEP · 03 / 04</div>
+    </div>
   </div>
+
   <div class="wrap">
-    <div class="dhdr" style="margin-bottom:14px">
+
+    <div class="dhdr">
       <div>
         <div class="dhdr-d" id="shop-date"></div>
-        <div style="margin-top:5px;font-size:.8rem;font-weight:700;color:#fbbf24" id="shop-type-lbl"></div>
+        <div class="dhdr-w" id="shop-type-lbl"></div>
       </div>
-      <div style="font-size:1.9rem" id="shop-type-ico">🧋</div>
+      <div id="shop-type-ico" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--v2-milk);color:var(--v2-caramel)">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10l-1 13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2L7 7z"/><line x1="6" y1="7" x2="18" y2="7"/></svg>
+      </div>
     </div>
 
-    <div class="sect">🔍 模糊搜尋</div>
+    <div class="v2-ihero">
+      <h1 class="v2-ititle">選一家店</h1>
+      <p class="v2-isub">— 搜尋店名、品項，或上傳一張菜單</p>
+    </div>
+
+    <div class="sect">搜尋</div>
     <div class="fwrap" id="fwrap">
-      <span class="ficon">🔍</span>
-      <input class="fin" id="fin" placeholder="輸入關鍵字，如：五十、珍珠、雞腿、便當…" autocomplete="off"
+      <span class="ficon"></span>
+      <input class="fin" id="fin" placeholder="輸入店名或品項：五十嵐、珍珠、雞腿便當…" autocomplete="off"
         oninput="fuzzy(this.value)" onkeydown="fuzzyKey(event)">
       <div class="fdrop" id="fdrop"></div>
     </div>
 
-    <div class="or-divider">── 或 ──</div>
-    <div class="sect">📸 上傳菜單照片讓 AI 辨識</div>
+    <div class="or-divider">或</div>
+
+    <div class="sect">拍張菜單讓 AI 辨識</div>
     <div class="upload-menu-box" id="menu-upload-zone" onclick="document.getElementById('menu-img-input').click()">
       <div id="menu-upload-preview">
-        <div style="font-size:1.8rem">📷</div>
-        <div class="upload-menu-txt">點擊上傳菜單照片（黑板/紙本/螢幕截圖皆可）</div>
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="var(--v2-caramel)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;opacity:.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <div class="upload-menu-txt">點擊上傳菜單照片<br><span style="font-family:var(--v2-sans);font-size:12px;color:var(--v2-ink-muted);font-weight:400">黑板、紙本、螢幕截圖皆可 · AI 自動辨識品項與價格</span></div>
       </div>
     </div>
     <input type="file" id="menu-img-input" accept="image/*" style="display:none" onchange="handleMenuImg(event)">
@@ -576,15 +1425,19 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
       <div id="ocr-steps"></div>
     </div>
 
-    <div class="or-divider">── 或 ──</div>
-    <button onclick="goPresets()" style="width:100%;padding:14px;border-radius:var(--r2);border:2px solid var(--bdr2);background:var(--sur);font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s" onmouseover="this.style.borderColor='var(--gold)';this.style.background='var(--goldbg)'" onmouseout="this.style.borderColor='var(--bdr2)';this.style.background='var(--sur)'">
-      <span id="preset-ico">📍</span>
-      <div style="text-align:left">
-        <div id="preset-lbl" style="font-size:.86rem">瀏覽精選20間店家</div>
-        <div style="font-size:.67rem;color:var(--ink3);margin-top:1px">含地址、電話、完整菜單</div>
+    <div class="or-divider">或</div>
+
+    <button onclick="goPresets()" style="width:100%;padding:16px 20px;border-radius:999px;border:1px solid var(--v2-line);background:var(--v2-cream-lt);cursor:pointer;font-family:var(--v2-sans);display:flex;align-items:center;gap:12px;transition:all .2s">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--v2-milk);display:flex;align-items:center;justify-content:center;color:var(--v2-caramel)" id="preset-ico">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       </div>
-      <span style="margin-left:auto;color:var(--ink3)">›</span>
+      <div style="text-align:left;flex:1">
+        <div id="preset-lbl" style="font-family:var(--v2-serif);font-size:15px;font-weight:500;color:var(--v2-ink)">瀏覽精選店家</div>
+        <div style="font-family:var(--v2-sans);font-size:11.5px;color:var(--v2-ink-soft);margin-top:2px">含地址、電話、完整菜單</div>
+      </div>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--v2-ink-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
+
   </div>
 </div>
 
@@ -772,21 +1625,73 @@ function renderGrid(){
   const dow=base.getDay(), mon=new Date(base);
   mon.setDate(base.getDate()-(dow===0?6:dow-1));
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  document.getElementById('w-lbl').textContent=`${mon.getMonth()+1}/${mon.getDate()} – ${sun.getMonth()+1}/${sun.getDate()}`;
+  const monFmt=`${mon.getMonth()+1}月${mon.getDate()}日`;
+  const sunFmt=`${sun.getMonth()+1}月${sun.getDate()}日`;
+  const lbl=document.getElementById('w-lbl');
+  if(lbl) lbl.textContent=`${monFmt} — ${sunFmt}`;
+
+  // 更新首頁 italic 副標：今日的團數
+  try{
+    const tk=fmt(today);
+    const tg=S.groups[tk]||{};
+    const tdr=Array.isArray(tg.drink)?tg.drink.length:(tg.drink?1:0);
+    const tfo=Array.isArray(tg.food)?tg.food.length:(tg.food?1:0);
+    const tot=tdr+tfo;
+    const sub=document.getElementById('v2-land-sub');
+    if(sub){
+      if(tot===0) sub.textContent='— 今日還沒有人開團';
+      else sub.textContent=`— 今日共有 ${tot} 個團開著`;
+    }
+  }catch(e){}
+
   let h='';
+  const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>';
   for(let i=0;i<7;i++){
     const d=new Date(mon); d.setDate(mon.getDate()+i);
-    const k=fmt(d), isTd=fmt(today)===k, isSel=k===S.selDate;
-    const dow=d.getDay(); // 0=日 6=六
-    const dayCls = dow===6?' sat':(dow===0?' sun':'');
-    const g=S.groups[k]||{}, hDr=!!(Array.isArray(g.drink)?g.drink.length:g.drink), hFo=!!(Array.isArray(g.food)?g.food.length:g.food);
-    h+=`<div class="dc${dayCls}${isSel?' sel':''}${(hDr||hFo)?' has':''}" onclick="selDate('${k}')">
-      <span class="D">${d.getDate()}</span>
-      <span class="W">${isTd?'今':WD[d.getDay()]}</span>
-      ${hDr||hFo?'<div class="dots">'+(hDr?'<span class="dot dr"></span>':'')+(hFo?'<span class="dot fo"></span>':'')+'</div>':''}
+    const k=fmt(d), isTd=fmt(today)===k;
+    const dw=d.getDay();
+    const wkend = (dw===0||dw===6);
+    const g=S.groups[k]||{};
+    const dr=Array.isArray(g.drink)?g.drink.length:(g.drink?1:0);
+    const fo=Array.isArray(g.food)?g.food.length:(g.food?1:0);
+    const total=dr+fo;
+    // 狀態文字
+    let stat='';
+    if(isTd && total===0) stat='<span class="muted">今日尚無開團</span>';
+    else if(isTd) stat=`${total} 個團開著 <span class="muted">· 今日</span>`;
+    else if(total===0) stat='<span class="muted">尚無開團</span>';
+    else stat=`${total} 個團開著`;
+    // 類型計數
+    let counts='';
+    if(total>0){
+      const parts=[];
+      if(dr) parts.push(`飲料×${dr}`);
+      if(fo) parts.push(`便當×${fo}`);
+      counts=`<span class="v2-drow-counts">${parts.join(' · ')}</span>`;
+    } else {
+      counts='<span></span>';
+    }
+    const wdShort=['SUN','MON','TUE','WED','THU','FRI','SAT'][dw];
+    h+=`<div class="v2-drow${isTd?' today':''}${wkend?' wkend':''}" onclick="selDate('${k}')">
+      <span class="v2-drow-wd">${wdShort}</span>
+      <span class="v2-drow-day">${d.getDate()}</span>
+      <span class="v2-drow-stat">${stat}</span>
+      ${counts}
+      <span class="v2-drow-chev">${chev}</span>
     </div>`;
   }
   document.getElementById('dgrid').innerHTML=h;
+}
+
+// CTA：從首頁直接開團 — 預設選今天
+function v2StartNewToday(){
+  try{
+    const t=new Date();
+    S.selDate=fmt(t);
+    renderGrid();
+    renderDay();
+    go('day');
+  }catch(e){ console.warn(e); }
 }
 function selDate(k){
   S.selDate=k; renderGrid();
@@ -803,45 +1708,84 @@ function selDate(k){
 // ═══════════════════════════════════════════════
 function renderDay(){
   var k=S.selDate;
-  document.getElementById('day-t').textContent=dlbl(k);
-  document.getElementById('day-d').textContent=dlbl(k);
-  document.getElementById('day-w').textContent=WDF[new Date(k+'T00:00:00').getDay()];
+  if(!k) return;
+  var dObj=new Date(k+'T00:00:00');
+  var wdf=WDF[dObj.getDay()];
+  // 頂部 mono 標籤 + 大標副標
+  var dd=document.getElementById('day-d');
+  if(dd){ dd.textContent=(dObj.getMonth()+1)+'月'+dObj.getDate()+'日 · '+wdf; }
+  var dt=document.getElementById('day-t'); if(dt) dt.textContent=dlbl(k);
+  var dw=document.getElementById('day-w'); if(dw) dw.textContent=wdf;
+
   var g=S.groups[k]||{};
-  var rowsHtml='';
+  var tdKey=fmt(new Date());
+  var isToday=(k===tdKey);
+  var sub=document.getElementById('day-sub');
+  if(sub){
+    if(isToday) sub.textContent='— 飲料團與便當團可以同天並存';
+    else sub.textContent='— 這天要開飲料還是便當？';
+  }
+
+  // SVG icons
+  var icoDrink='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14h20l-2 26a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3L14 14z"/><path d="M12 14h24"/><path d="M22 7c0 2 2 2 2 4s-2 2-2 4"/><path d="M28 9c0 1.5 1.5 1.5 1.5 3s-1.5 1.5-1.5 3"/></svg>';
+  var icoFood='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="16" width="32" height="22" rx="3"/><path d="M8 22h32"/><path d="M14 10l4 6"/><path d="M24 8v8"/><path d="M34 10l-4 6"/></svg>';
+  var icoArrow='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+
+  var html='';
   ['drink','food'].forEach(function(type){
     var isDr=type==='drink';
-    var nm=isDr?'飲料團':'便當團',cls=isDr?'dr':'fo',ico=isDr?'🧋':'🍱';
     var raw=g[type];
     var grpList=Array.isArray(raw)?raw:(raw?[raw]:[]);
-    var cards='';
-    grpList.forEach(function(grp,idx){
-      var cnt=(grp.orders||[]).length;
-      var ann=grp.announcement
-        ?('<div style="font-size:.71rem;color:var(--gold);margin-top:5px;background:var(--goldbg);border-radius:6px;padding:5px 8px">📢 '+grp.announcement+'</div>')
-        :'';
-      var jg="joinGroup('"+type+"',"+idx+")";
-      var od="openGroupDetailIdx('"+type+"',"+idx+")";
-      cards+='<div style="background:var(--sur);border:2px solid var(--bdr);border-radius:var(--r2);padding:10px 12px;margin-bottom:7px">'
-        +'<div style="font-size:.78rem;font-weight:700">'+(grp.shopIcon||'')+' '+grp.shopName+'</div>'
-        +'<div style="font-size:.68rem;color:var(--ink2);margin-top:2px">👤 '+grp.hostName+'｜'+cnt+' 人訂購</div>'
-        +ann
-        +'<div style="display:flex;gap:5px;margin-top:8px">'
-        +'<button onclick="'+jg+'" style="flex:1;padding:6px 0;border-radius:7px;border:none;background:var(--dark);color:var(--dktx);font-size:.73rem;font-weight:700;cursor:pointer">＋ 加入點餐</button>'
-        +'<button onclick="'+od+'" style="flex:1;padding:6px 0;border-radius:7px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:.73rem;font-weight:700;cursor:pointer">📋 訂單清單</button>'
-        +'</div></div>';
-    });
-    var lbl=grpList.length?('共 '+grpList.length+' 個團'):(isDr?'手搖飲、咖啡':'便當、定食');
-    var sg="startNewGroup('"+type+"')";
-    rowsHtml+='<div class="tc '+cls+'" style="cursor:default;text-align:left;padding:14px 13px">'
-      +'<div style="display:flex;align-items:center;gap:7px;margin-bottom:'+(grpList.length?'10px':'6px')+'">'
-      +'<span style="font-size:1.5rem">'+ico+'</span>'
-      +'<div><div class="tc-nm" style="text-align:left">'+nm+'</div>'
-      +'<div style="font-size:.67rem;color:var(--ink2)">'+lbl+'</div></div></div>'
-      +cards
-      +'<button onclick="'+sg+'" style="width:100%;padding:8px 0;border-radius:7px;border:2px dashed var(--bdr2);background:transparent;font-size:.76rem;font-weight:700;cursor:pointer;color:var(--ink2);margin-top:'+(grpList.length?'4px':'0')+'">＋ 開新的'+nm+'</button>'
+    var kicker=isDr?'DRINKS':'BENTO';
+    var name=isDr?'飲料':'便當';
+    var ico=isDr?icoDrink:icoFood;
+    var footLeft=grpList.length?('已有 '+grpList.length+' 個團'):(isDr?'手搖飲、咖啡、茶飲':'便當、定食、簡餐');
+
+    var grpCards='';
+    if(grpList.length){
+      grpCards+='<div class="v2-grplist">';
+      grpList.forEach(function(grp,idx){
+        var cnt=(grp.orders||[]).length;
+        var ann=grp.announcement?('<div class="v2-grp-ann">「'+grp.announcement+'」</div>'):'';
+        var jg="event.stopPropagation();joinGroup(\''+type+'\','+idx+')";
+        var od="event.stopPropagation();openGroupDetailIdx(\''+type+'\','+idx+')";
+        grpCards+='<div class="v2-grp" onclick="event.stopPropagation()">'
+          +'<div class="v2-grp-head">'
+          +'<div class="v2-grp-shop">'+(grp.shopName||'未命名店家')+'</div>'
+          +'<div class="v2-grp-cnt">'+cnt+' ORDERS</div>'
+          +'</div>'
+          +'<div class="v2-grp-host">團主 '+(grp.hostName||'—')+'</div>'
+          +ann
+          +'<div class="v2-grp-acts">'
+          +'<button class="v2-grp-btn join" onclick="'+jg+'">＋ 加入點餐</button>'
+          +'<button class="v2-grp-btn view" onclick="'+od+'">訂單清單</button>'
+          +'</div>'
+          +'</div>';
+      });
+      grpCards+='</div>';
+      // 已有團時才顯示「開新的團」虛線按鈕
+      grpCards+='<button class="v2-new-grp-btn" onclick="event.stopPropagation();startNewGroup(\''+type+'\')">＋ 再開一個'+name+'團</button>';
+    }
+
+    var cardClick=grpList.length?'':' onclick="startNewGroup(\''+type+'\')"';
+    html+='<div class="v2-type-card v2-'+type+'"'+cardClick+'>'
+      +'<div class="v2-type-head">'
+      +'<div>'
+      +'<div class="v2-type-kicker">'+kicker+'</div>'
+      +'<div class="v2-type-name">'+name+'</div>'
+      +'</div>'
+      +'<div class="v2-type-ico">'+ico+'</div>'
+      +'</div>'
+      +grpCards
+      +'<hr class="v2-type-sep"/>'
+      +'<div class="v2-type-foot">'
+      +'<span>'+footLeft+'</span>'
+      +(grpList.length?'<span class="pick" onclick="event.stopPropagation();startNewGroup(\''+type+'\')" style="cursor:pointer">開新團'+icoArrow+'</span>'
+        :'<span class="pick">選這個'+icoArrow+'</span>')
+      +'</div>'
       +'</div>';
   });
-  document.getElementById('trow').innerHTML=rowsHtml;
+  document.getElementById('trow').innerHTML=html;
 }
 
 
@@ -926,7 +1870,7 @@ function renderGroupDetail(){
       } else if(o.paidMethod==='ipass'){
         pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#ee7000;color:#fff;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:900">💳 iPass Money</span>';
       } else if(o.paidMethod==='cash'){
-        pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#fbbf24;color:#1a1714;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:900">💵 現金</span>';
+        pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:var(--v2-accent);color:var(--v2-ink);padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:900">💵 現金</span>';
       } else {
         pmBadge='<span style="display:inline-flex;align-items:center;gap:5px;background:#f1f5f9;color:#64748b;padding:5px 12px;border-radius:7px;font-size:.74rem;font-weight:700">— 未選擇</span>';
       }
@@ -937,7 +1881,7 @@ function renderGroupDetail(){
         +'<div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">'
         +'<div style="flex:1;min-width:120px">'+pmBadge+'</div>'
         +'<button onclick="startEditOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--bdr2);background:var(--sur);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">✏️ 修改</button>'
-        +'<button onclick="deleteOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🗑 刪除</button>'
+        +'<button onclick="deleteOrder('+i+')" style="padding:5px 10px;border-radius:7px;border:1.5px solid #fca5a5;background:#fef2f2;color:var(--v2-caramel);font-size:.72rem;font-weight:700;cursor:pointer;white-space:nowrap">🗑 刪除</button>'
         +'</div></div>';
     });
   }
@@ -952,11 +1896,11 @@ function renderGroupDetail(){
         +'<div class="gd-stat"><span class="v">'+orders.length+'</span><span class="l">總訂單</span></div>'
         +'<div class="gd-stat"><span class="v" style="color:#86efac">'+cnt.linepay+'</span><span class="l">💚 LINE Pay</span></div>'
         +'<div class="gd-stat"><span class="v" style="color:#fdba74">'+cnt.ipass+'</span><span class="l">💳 iPass</span></div>'
-        +'<div class="gd-stat"><span class="v" style="color:#fde68a">'+cnt.cash+'</span><span class="l">💵 現金</span></div>'
+        +'<div class="gd-stat"><span class="v" style="color:var(--v2-line-strong)">'+cnt.cash+'</span><span class="l">💵 現金</span></div>'
       +'</div>'
       +'<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);display:flex;justify-content:space-between;font-size:.84rem;font-weight:900">'
         +'<span>總金額</span>'
-        +'<span style="color:#fbbf24;font-family:\'DM Mono\',monospace">NT$'+total+'</span>'
+        +'<span style="color:var(--v2-accent);font-family:\'DM Mono\',monospace">NT$'+total+'</span>'
       +'</div>'
     +'</div>'
     +'<div class="sect">訂單明細（所有人可見）</div>'
@@ -1027,7 +1971,7 @@ function deleteGroup(){
         maxlength="20" onkeydown="if(event.key==='Enter') confirmDelete()">
       <div class="cf-btns">
         <button class="btn btn-out" style="flex:1" onclick="document.getElementById('delete-modal').remove()">取消</button>
-        <button class="btn" style="flex:1;background:#dc2626;color:#fff" onclick="confirmDelete()">確認刪除</button>
+        <button class="btn" style="flex:1;background:var(--v2-caramel);color:#fff" onclick="confirmDelete()">確認刪除</button>
       </div>
     </div>`;
   document.body.appendChild(m);
@@ -1145,7 +2089,7 @@ function globalFuzzy(q){
     return;
   }
   drop.innerHTML=hits.map(({s,i,type,matched})=>{
-    const badge=type==='drink'?'<span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">飲料</span>':'<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">便當</span>';
+    const badge=type==='drink'?'<span style="background:var(--v2-milk);color:var(--v2-caramel);padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">飲料</span>':'<span style="background:var(--v2-food-card);color:var(--v2-caramel);padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">便當</span>';
     const sub=matched?`含品項「${hilight(matched,q)}」`:s.addr;
     return `<div class="fitem" onclick="pickShopGlobal('${type}',${i})">
       <div class="fi-nm">${hilight(s.name,q)} ${s.icon||''}${badge}</div>
@@ -1307,7 +2251,7 @@ function saveOcrShopModal(detectedName, items){
       <div class="cf-title">📸 辨識完成</div>
       <div class="cf-msg">辨識到 <b>${items.length}</b> 個品項。請確認店家資訊：</div>
       <div style="margin-top:12px">
-        <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:4px">店名 <span style="color:#dc2626">*</span></div>
+        <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:4px">店名 <span style="color:var(--v2-caramel)">*</span></div>
         <input id="ocr-name" class="fin" style="padding-left:14px;margin-bottom:10px" placeholder="例：五十嵐 成大店" value="${(detectedName||'').replace(/"/g,'&quot;')}">
         <div style="font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:4px">地址（選填）</div>
         <input id="ocr-addr" class="fin" style="padding-left:14px;margin-bottom:10px" placeholder="例：台南市東區育樂街79號">
@@ -1317,7 +2261,7 @@ function saveOcrShopModal(detectedName, items){
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
         <button id="ocr-save-go" class="btn btn-dk btn-full">💾 儲存到店家清單 + 開始開團</button>
         <button id="ocr-just-use" class="btn btn-out btn-full">🚀 只用這次，不儲存</button>
-        <button id="ocr-back" style="background:#fef3c7;border:2px solid #fbbf24;color:#92400e;border-radius:10px;padding:11px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 返回選擇其他店家</button>
+        <button id="ocr-back" style="background:var(--v2-milk);border:2px solid var(--v2-accent);color:var(--v2-caramel);border-radius:10px;padding:11px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif">← 返回選擇其他店家</button>
         <button id="ocr-cancel" style="background:transparent;border:none;color:var(--ink3);padding:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif">取消（保留目前辨識結果）</button>
       </div>
     </div>`;
@@ -1516,7 +2460,7 @@ function updateShopMenuModal(shop, items){
       <div class="cf-title">📸 更新「${shop.name}」菜單</div>
       <div class="cf-msg">辨識到 <b>${items.length}</b> 個品項，將<b>取代</b>此店家的所有現有品項。</div>
       <div style="max-height:280px;overflow-y:auto;margin:12px 0;padding:8px;background:var(--bg);border-radius:8px;font-size:.76rem">
-        ${items.map(it=>'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bdr)"><span>'+it.name+(it.cat?' <span style="color:var(--ink3);font-size:.65rem">'+it.cat+'</span>':'')+'</span><span style="color:#dc2626;white-space:nowrap;margin-left:8px">NT$'+it.price+'</span></div>').join('')}
+        ${items.map(it=>'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bdr)"><span>'+it.name+(it.cat?' <span style="color:var(--ink3);font-size:.65rem">'+it.cat+'</span>':'')+'</span><span style="color:var(--v2-caramel);white-space:nowrap;margin-left:8px">NT$'+it.price+'</span></div>').join('')}
       </div>
       <div style="font-size:.72rem;color:var(--ink2);text-align:center">共 ${items.length} 個品項，確認後將全部取代舊菜單</div>
       <div style="display:flex;flex-direction:column;gap:8px">
@@ -2171,7 +3115,7 @@ function goConfirm(){
 
   document.getElementById('cf-wrap').innerHTML=`
     ${orderCards}
-    ${allPersonSummary.length>1?`<div style="background:var(--bg);border-radius:var(--r2);padding:12px 15px;display:flex;justify-content:space-between;font-weight:900;font-size:1rem;margin-bottom:12px"><span>合計 ${allPersonSummary.length} 人</span><span style="color:#dc2626;font-family:'DM Mono',monospace">NT$${grandTotal}</span></div>`:''}
+    ${allPersonSummary.length>1?`<div style="background:var(--bg);border-radius:var(--r2);padding:12px 15px;display:flex;justify-content:space-between;font-weight:900;font-size:1rem;margin-bottom:12px"><span>合計 ${allPersonSummary.length} 人</span><span style="color:var(--v2-caramel);font-family:'DM Mono',monospace">NT$${grandTotal}</span></div>`:''}
     <div class="paybox">
       <div class="pb-t">💳 付款給團主 ${grp.hostName}</div>
       <div class="pb-a">NT$${grandTotal}</div>
@@ -2212,7 +3156,7 @@ function payBtns(grp, pickerName, extraArgs){
             <div class="pmb-sub" style="font-size:.66rem;font-weight:500;opacity:.9;margin-top:1px">點擊選擇</div>
           </div>
         </button>
-        <button class="pay-method-btn" data-method="cash" onclick="selectPayMethod(this,'cash')" style="display:flex;align-items:center;gap:10px;width:100%;background:#fbbf24;color:#1a1714;border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25);margin-top:8px;transition:all .2s">
+        <button class="pay-method-btn" data-method="cash" onclick="selectPayMethod(this,'cash')" style="display:flex;align-items:center;gap:10px;width:100%;background:var(--v2-accent);color:var(--v2-ink);border:3px solid transparent;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25);margin-top:8px;transition:all .2s">
           <span style="font-size:1.4rem">💵</span>
           <div style="flex:1;text-align:left">
             <div>現金</div>
@@ -2242,7 +3186,7 @@ function selectPayMethod(btn, method){
     const isSel = (b === btn);
     b.style.transition = 'all .2s';
     if(isSel){
-      b.style.border = '3px solid #1a1714';
+      b.style.border = '3px solid var(--v2-ink)';
       b.style.transform = 'scale(1.03)';
       b.style.boxShadow = '0 6px 18px rgba(0,0,0,.25)';
       b.style.opacity = '1';
@@ -2310,7 +3254,7 @@ function renderCommittedPayUI(area, method, hostName){
   const labels = {
     linepay: { ico:'💚', name:'LINE Pay',  bg:'#06c755', fg:'#fff' },
     ipass:   { ico:'💳', name:'iPass Money', bg:'#ee7000', fg:'#fff' },
-    cash:    { ico:'💵', name:'現金',      bg:'#fbbf24', fg:'#1a1714' }
+    cash:    { ico:'💵', name:'現金',      bg:'var(--v2-accent)', fg:'var(--v2-ink)' }
   };
   const c = labels[method];
   if(!c) return;
@@ -2368,7 +3312,7 @@ function simplePayBtns(){
   const labels = {
     linepay: { ico:'💚', name:'LINE Pay',    bg:'#06c755', fg:'#fff' },
     ipass:   { ico:'💳', name:'iPass Money', bg:'#ee7000', fg:'#fff' },
-    cash:    { ico:'💵', name:'現金',        bg:'#fbbf24', fg:'#1a1714' }
+    cash:    { ico:'💵', name:'現金',        bg:'var(--v2-accent)', fg:'var(--v2-ink)' }
   };
   const m = S._pendingPayMethod;
   if(m && labels[m]){
@@ -2382,7 +3326,7 @@ function simplePayBtns(){
   return '<div style="width:100%;display:flex;flex-direction:column;gap:8px">'
     +'<button onclick="pickStagedPay(\'linepay\')" style="display:flex;align-items:center;gap:10px;width:100%;background:#06c755;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(6,199,85,.25)"><span style="font-size:1.4rem">💚</span><span style="flex:1;text-align:left">LINE Pay</span></button>'
     +'<button onclick="pickStagedPay(\'ipass\')" style="display:flex;align-items:center;gap:10px;width:100%;background:#ee7000;color:#fff;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(238,112,0,.25)"><span style="font-size:1.4rem">💳</span><span style="flex:1;text-align:left">iPass Money</span></button>'
-    +'<button onclick="pickStagedPay(\'cash\')" style="display:flex;align-items:center;gap:10px;width:100%;background:#fbbf24;color:#1a1714;border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25)"><span style="font-size:1.4rem">💵</span><span style="flex:1;text-align:left">現金</span></button>'
+    +'<button onclick="pickStagedPay(\'cash\')" style="display:flex;align-items:center;gap:10px;width:100%;background:var(--v2-accent);color:var(--v2-ink);border:none;border-radius:10px;padding:14px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(251,191,36,.25)"><span style="font-size:1.4rem">💵</span><span style="flex:1;text-align:left">現金</span></button>'
     +'</div>';
 }
 
@@ -2451,8 +3395,8 @@ function renderDoneAll(pendingOrders, myOrderIdxs, payMethod){
   const grandTotal=pendingOrders.reduce((s,p)=>s+p.total,0);
   const pmLabel = payMethodLabel(payMethod||'');
   const pmIco = payMethod==='linepay'?'💚':payMethod==='ipass'?'💳':payMethod==='cash'?'💵':'';
-  const pmBg = payMethod==='linepay'?'#06c755':payMethod==='ipass'?'#ee7000':'#fbbf24';
-  const pmFg = payMethod==='cash'?'#1a1714':'#fff';
+  const pmBg = payMethod==='linepay'?'#06c755':payMethod==='ipass'?'#ee7000':'var(--v2-accent)';
+  const pmFg = payMethod==='cash'?'var(--v2-ink)':'#fff';
   const receiptCards = pendingOrders.map((p,pi)=>`
     <div class="sc" style="margin-bottom:8px">
       <div class="sc-hd">📄 ${p.name} 的收據</div>
@@ -2527,7 +3471,7 @@ function pickPayMethodModal(cb){
         <button id="pm-ipass" style="display:flex;align-items:center;gap:10px;background:#ee7000;color:#fff;border:none;border-radius:10px;padding:13px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:'Noto Sans TC',sans-serif;text-align:left">
           <span style="font-size:1.4rem">💳</span><span style="flex:1">iPass Money</span><span>›</span>
         </button>
-        <button id="pm-cash" style="display:flex;align-items:center;gap:10px;background:#fbbf24;color:#1a1714;border:none;border-radius:10px;padding:13px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:'Noto Sans TC',sans-serif;text-align:left">
+        <button id="pm-cash" style="display:flex;align-items:center;gap:10px;background:var(--v2-accent);color:var(--v2-ink);border:none;border-radius:10px;padding:13px 16px;font-size:.92rem;font-weight:900;cursor:pointer;font-family:'Noto Sans TC',sans-serif;text-align:left">
           <span style="font-size:1.4rem">💵</span><span style="flex:1">現金</span><span>›</span>
         </button>
         <button id="pm-cancel" style="background:transparent;border:none;color:var(--ink3);padding:8px;font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif">取消</button>
@@ -2828,7 +3772,7 @@ function goPresets(){
   // 拍照新增店家按鈕（隱藏的 file input）
   html += '<input type="file" id="preset-img-input" accept="image/*" style="display:none" onchange="handlePresetMenuImg(event)">';
   html += '<button onclick="document.getElementById(\'preset-img-input\').click()" style="width:100%;padding:13px;border-radius:10px;border:2px solid #06c755;background:#f0fdf4;color:#15803d;font-size:.86rem;font-weight:900;cursor:pointer;margin-bottom:8px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:1.2rem">📸</span> 拍照辨識菜單 → 新增/更新店家</button>';
-  html += '<button onclick="togglePresetsManage()" style="width:100%;padding:11px;border-radius:9px;border:2px solid '+(mgr?'#dc2626':'var(--bdr2)')+';background:'+(mgr?'#fef2f2':'var(--sur)')+';color:'+(mgr?'#dc2626':'var(--ink)')+';font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:12px;font-family:inherit">'+(mgr?'✓ 完成管理，返回正常模式':'⚙️ 進入管理模式（重命名/刪除店家）')+'</button>';
+  html += '<button onclick="togglePresetsManage()" style="width:100%;padding:11px;border-radius:9px;border:2px solid '+(mgr?'var(--v2-caramel)':'var(--bdr2)')+';background:'+(mgr?'#fef2f2':'var(--sur)')+';color:'+(mgr?'var(--v2-caramel)':'var(--ink)')+';font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:12px;font-family:inherit">'+(mgr?'✓ 完成管理，返回正常模式':'⚙️ 進入管理模式（重命名/刪除店家）')+'</button>';
 
   list.forEach(function(shop, idx){
     const mapUrl = 'https://maps.google.com/?q=' + encodeURIComponent((shop.addr||shop.name)+' 台南');
@@ -2866,8 +3810,8 @@ function goPresets(){
       + '<div class="pshop-body">'
       +   (mgr
           ? '<div style="display:flex;gap:8px;margin-bottom:8px">'
-            + '<button onclick="renamePresetShop(' + idx + ')" style="flex:1;padding:11px;border-radius:9px;border:2px solid #fbbf24;background:#fffbeb;color:#92400e;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ 重新命名</button>'
-            + '<button onclick="deletePresetShop(' + idx + ')" style="flex:1;padding:11px;border-radius:9px;border:2px solid #dc2626;background:#fef2f2;color:#dc2626;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">🗑 刪除店家</button>'
+            + '<button onclick="renamePresetShop(' + idx + ')" style="flex:1;padding:11px;border-radius:9px;border:2px solid var(--v2-accent);background:var(--v2-cream-lt);color:var(--v2-caramel);font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ 重新命名</button>'
+            + '<button onclick="deletePresetShop(' + idx + ')" style="flex:1;padding:11px;border-radius:9px;border:2px solid var(--v2-caramel);background:#fef2f2;color:var(--v2-caramel);font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit">🗑 刪除店家</button>'
             + '</div>'
             + '<button onclick="triggerUpdateShopMenu(' + idx + ')" style="width:100%;padding:11px;border-radius:9px;border:2px solid #06c755;background:#f0fdf4;color:#15803d;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px"><span>📸</span> 拍照更新此店菜單</button>'
           : '<button class="pshop-select" onclick="pickPresetShop(' + idx + ')">✅ 選擇此店家開始開團</button>')
@@ -2924,7 +3868,7 @@ function exportPDF(){
       <td style="padding:9px 12px;border:1px solid #ddd;font-weight:700;vertical-align:top;white-space:nowrap">${o.name}</td>
       <td style="padding:9px 12px;border:1px solid #ddd">${itemsHtml}${noteHtml}</td>
       <td style="padding:9px 12px;border:1px solid #ddd;text-align:center;vertical-align:top;white-space:nowrap">${pmIco}</td>
-      <td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-weight:700;color:#dc2626;vertical-align:top;white-space:nowrap">NT$${o.total}</td>
+      <td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-weight:700;color:var(--v2-caramel);vertical-align:top;white-space:nowrap">NT$${o.total}</td>
     </tr>`;}).join('');
 
   // 飲料品項合併統計（方便團主一次跟店家點）
@@ -2936,7 +3880,7 @@ function exportPDF(){
     itemAgg[k].sub += it.sub||0;
   }));
   const aggRows = Object.entries(itemAgg).map(([name,v])=>
-    '<tr><td style="padding:7px 10px;border:1px solid #ddd">'+name+'</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center;font-weight:700">×'+v.qty+'</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:right;color:#dc2626;font-weight:700">NT$'+v.sub+'</td></tr>'
+    '<tr><td style="padding:7px 10px;border:1px solid #ddd">'+name+'</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:center;font-weight:700">×'+v.qty+'</td><td style="padding:7px 10px;border:1px solid #ddd;text-align:right;color:var(--v2-caramel);font-weight:700">NT$'+v.sub+'</td></tr>'
   ).join('');
   const totalQty = Object.values(itemAgg).reduce((s,v)=>s+v.qty,0);
 
@@ -2944,18 +3888,18 @@ function exportPDF(){
   let html = '<div id="pdfview" style="font-family:\'Noto Sans TC\',sans-serif;background:#fff;color:#111;padding:0;max-width:100%;position:fixed;inset:0;z-index:9999;overflow-y:auto">';
 
   // Top bar (hidden on print)
-  html += '<div class="no-print" style="background:#1a1714;color:#fbbf24;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">';
+  html += '<div class="no-print" style="background:var(--v2-ink);color:var(--v2-accent);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">';
   html += '<button onclick="document.getElementById(\'pdfview\').remove()" style="background:rgba(255,255,255,.15);color:#f5f0e8;border:none;border-radius:7px;padding:8px 12px;font-size:.84rem;font-weight:700;cursor:pointer;font-family:sans-serif">← 返回</button>';
   html += '<span style="font-size:.85rem;font-weight:700">EMBA E118 訂單</span>';
-  html += '<button onclick="doDownloadPDF()" style="background:#fbbf24;color:#1a1714;border:none;border-radius:7px;padding:8px 16px;font-size:.84rem;font-weight:900;cursor:pointer;font-family:sans-serif">📥 下載 PDF</button>';
+  html += '<button onclick="doDownloadPDF()" style="background:var(--v2-accent);color:var(--v2-ink);border:none;border-radius:7px;padding:8px 16px;font-size:.84rem;font-weight:900;cursor:pointer;font-family:sans-serif">📥 下載 PDF</button>';
   html += '</div>';
 
   // Content
   html += '<div id="pdfview-content" style="padding:20px;max-width:700px;margin:0 auto;background:#fff;color:#111;font-family:\'Noto Sans TC\',sans-serif">';
 
   // Header
-  html += '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #1a1714;padding-bottom:14px;margin-bottom:18px">';
-  html += '<div style="background:#1a1714;color:#fbbf24;padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:700">EMBA E118</div>';
+  html += '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--v2-ink);padding-bottom:14px;margin-bottom:18px">';
+  html += '<div style="background:var(--v2-ink);color:var(--v2-accent);padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:700">EMBA E118</div>';
   html += '<div><div style="font-size:1.2rem;font-weight:900">' + (isDr?'🧋 飲料':'🍱 便當') + '團訂單</div>';
   html += '<div style="font-size:.73rem;color:#666;margin-top:2px">列印：' + ts + '</div></div></div>';
 
@@ -2974,14 +3918,14 @@ function exportPDF(){
   html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.86rem">';
   html += '<thead><tr style="background:#ee7000;color:#fff"><th style="padding:9px 12px;border:1px solid #c75800;text-align:left">品項</th><th style="padding:9px 12px;border:1px solid #c75800;text-align:center;width:80px">數量</th><th style="padding:9px 12px;border:1px solid #c75800;text-align:right;width:110px">小計</th></tr></thead>';
   html += '<tbody>' + aggRows + '</tbody>';
-  html += '<tfoot><tr style="background:#fff7ed;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:center">×' + totalQty + '</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:#dc2626">NT$' + total + '</td></tr></tfoot></table>';
+  html += '<tfoot><tr style="background:#fff7ed;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:center">×' + totalQty + '</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:var(--v2-caramel)">NT$' + total + '</td></tr></tfoot></table>';
 
   // Orders table — 姓名 / 品項 / 付款方式 / 總金額
-  html += '<div style="font-size:.88rem;font-weight:700;margin-bottom:8px;border-left:4px solid #1a1714;padding-left:10px">👥 個人訂單明細（共 ' + orders.length + ' 人）</div>';
+  html += '<div style="font-size:.88rem;font-weight:700;margin-bottom:8px;border-left:4px solid var(--v2-ink);padding-left:10px">👥 個人訂單明細（共 ' + orders.length + ' 人）</div>';
   html += '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.86rem">';
-  html += '<thead><tr style="background:#1a1714;color:#fbbf24"><th style="padding:9px 12px;border:1px solid #333;text-align:left;width:80px">姓名</th><th style="padding:9px 12px;border:1px solid #333;text-align:left">品項</th><th style="padding:9px 12px;border:1px solid #333;text-align:center;width:110px">付款方式</th><th style="padding:9px 12px;border:1px solid #333;text-align:right;width:90px">小計</th></tr></thead>';
+  html += '<thead><tr style="background:var(--v2-ink);color:var(--v2-accent)"><th style="padding:9px 12px;border:1px solid #333;text-align:left;width:80px">姓名</th><th style="padding:9px 12px;border:1px solid #333;text-align:left">品項</th><th style="padding:9px 12px;border:1px solid #333;text-align:center;width:110px">付款方式</th><th style="padding:9px 12px;border:1px solid #333;text-align:right;width:90px">小計</th></tr></thead>';
   html += '<tbody>' + orderRows + '</tbody>';
-  html += '<tfoot><tr style="background:#f5f5f5;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-size:.78rem">已收 NT$' + paidAmt + '</td><td style="padding:9px 12px;border:1px solid #ddd"></td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:#dc2626;font-size:1rem">NT$' + total + '</td></tr></tfoot></table>';
+  html += '<tfoot><tr style="background:#f5f5f5;font-weight:900"><td style="padding:9px 12px;border:1px solid #ddd">合計</td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;font-size:.78rem">已收 NT$' + paidAmt + '</td><td style="padding:9px 12px;border:1px solid #ddd"></td><td style="padding:9px 12px;border:1px solid #ddd;text-align:right;color:var(--v2-caramel);font-size:1rem">NT$' + total + '</td></tr></tfoot></table>';
 
   html += '<div style="text-align:center;font-size:.7rem;color:#999;border-top:1px solid #eee;padding-top:10px">EMBA E118 共學團點餐系統　' + ts + '</div>';
   html += '</div></div>';
