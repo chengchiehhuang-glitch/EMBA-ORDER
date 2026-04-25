@@ -2062,6 +2062,8 @@ function openGroupDetailIdx(type, idx){
   if(!S.curGroup){ toast('找不到此團'); return; }
   renderGroupDetail();
   go('s-group');
+  // 進入訂單清單畫面時立即同步一次，避免等下一輪輪詢
+  if(GAS_URL && typeof syncGAS==='function') syncGAS();
 }
 
 // legacy（單團進入，保留向後相容）
@@ -4034,12 +4036,15 @@ async function syncGAS(){
         for(let i=0;i<maxLen;i++){
           const L = localArr[i], R = remoteArr[i];
           if(L && R){
-            // 合併 orders
+            // 合併 orders：以 name 為 key（同團內一人一筆，與後端 actionEditOrder 假設一致）。
+            // 遠端為唯一真相；只在 5 秒寫入保護期內才補本地獨有，避免覆蓋剛剛的本地新訂單。
             const lo = L.orders||[], ro = R.orders||[];
             const seen = new Set();
             const mergedOrders = [];
-            ro.forEach(o=>{ const k=(o.name||'')+'|'+(o.ts||''); seen.add(k); mergedOrders.push(o); });
-            lo.forEach(o=>{ const k=(o.name||'')+'|'+(o.ts||''); if(!seen.has(k)) mergedOrders.push(o); });
+            ro.forEach(o=>{ seen.add(o.name||''); mergedOrders.push(o); });
+            if(S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000){
+              lo.forEach(o=>{ if(!seen.has(o.name||'')) mergedOrders.push(o); });
+            }
             merged.push({...R, orders: mergedOrders});
           } else if(R){
             merged.push(R);
@@ -4079,7 +4084,7 @@ function rerenderCurrentScreen(){
   }catch(e){ console.warn('rerender failed:', e.message); }
 }
 
-// ── 自動輪詢:每 8 秒拉一次遠端資料 (只有 tab 可見時) ──
+// ── 自動輪詢:每 3 秒拉一次遠端資料 (只有 tab 可見時) ──
 let _syncTimer = null;
 function startSyncPolling(){
   if(_syncTimer) clearInterval(_syncTimer);
@@ -4087,7 +4092,7 @@ function startSyncPolling(){
     if(document.visibilityState==='visible' && GAS_URL){
       syncGAS();
     }
-  }, 8000);
+  }, 3000);
 }
 document.addEventListener('visibilitychange', ()=>{
   // 回到 tab 時立刻同步一次
