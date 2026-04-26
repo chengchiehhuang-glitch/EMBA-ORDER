@@ -3039,6 +3039,13 @@ async function doCreate(){
     if(!r.success){
       toast('⚠️ 雲端同步失敗,本地已儲存');
     } else {
+      // ★ 強制 sync 一次,讓本地 array 對齊雲端的真實 col12 順序
+      //   (group 級別合併安全,本地剛建的團與雲端的舊團都會保留 — 不會丟訂單)
+      if(typeof syncGAS === 'function') await syncGAS(true);
+      // 從新 S.groups 重找剛建的團（用 createdAt 識別）並修正 curGroupIdx
+      const arr = S.groups[k]?.[S.type] || [];
+      const idx = arr.findIndex(g => g && g.createdAt === grp.createdAt);
+      if(idx >= 0) S.curGroupIdx = idx;
       toast('🎉 開團成功！');
     }
   } else {
