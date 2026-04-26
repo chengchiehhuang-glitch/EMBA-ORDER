@@ -3727,13 +3727,14 @@ async function doSubmitAll(){
       existing.paidMethod = payMethod;
       if(p.note) existing.note = p.note;
       existing.ts = ts;
+      existing._pendingSync = true; // 雲端尚未確認
       myOrderIdxs.push(existIdx);
       // 傳給 GAS 只送本次新增的 items（讓後端記錄歷史，避免覆蓋既有資料）
       // 後端用 name 匯總，加進來就對了
       toSend.push({name:p.name, total:newTotal, note:p.note||existing.note||'', items:p.items, paid:true, paidMethod:payMethod, ts});
     } else {
       // 首次下單：照舊新建
-      const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:true, paidMethod:payMethod, ts};
+      const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:true, paidMethod:payMethod, ts, _pendingSync:true};
       grp.orders.push(order);
       myOrderIdxs.push(grp.orders.length-1);
       toSend.push(order);
@@ -3743,18 +3744,41 @@ async function doSubmitAll(){
   // 開啟 5 秒寫入保護窗,防止 syncGAS 把本地剛存的訂單當「本地獨有」丟掉
   S._lastWriteAt = Date.now();
   // 同步到 GAS (等待完成,確保雲端有資料)
+  let allSyncOk = true;
+  let firstError = '';
   if(GAS_URL){
     toast('⏳ 送出訂單中…');
-    await Promise.all(toSend.map(order =>
+    const submitResults = await Promise.all(toSend.map(order =>
       sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,order})
     ));
+    submitResults.forEach(r => {
+      if(!r || r.success === false){
+        allSyncOk = false;
+        if(!firstError) firstError = (r && r.error) || '網路或後端錯誤';
+      }
+    });
     // 後端 submitOrder 不寫 paid/paidMethod，需再補一刀 updateOrderPaid
-    await Promise.all(myOrderIdxs.map(i =>
-      sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:i,paid:true,paidMethod:payMethod})
-    ));
-    // 雲端寫入完成,延長保護窗到此刻
-    // 不主動 syncGAS（避免雲端 read-after-write 短暫不一致時把本地剛存的訂單覆蓋掉）
-    // 本地 S.groups 已是最新,後續 3 秒輪詢會自然把雲端版本合併進來
+    if(allSyncOk){
+      const paidResults = await Promise.all(myOrderIdxs.map(i =>
+        sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:i,paid:true,paidMethod:payMethod})
+      ));
+      paidResults.forEach(r => {
+        if(!r || r.success === false){
+          allSyncOk = false;
+          if(!firstError) firstError = (r && r.error) || '付款方式同步失敗';
+        }
+      });
+    }
+    if(allSyncOk){
+      // 雲端確認成功 → 清掉 _pendingSync 旗標
+      myOrderIdxs.forEach(i => { if(grp.orders[i]) delete grp.orders[i]._pendingSync; });
+      saveG();
+    } else {
+      // 雲端失敗：訂單留在本地、_pendingSync 旗標保留 → 永遠不會被 polling 清掉
+      saveG();
+      toast('⚠️ 雲端同步失敗：' + firstError + ' — 訂單已存本地，可重新送出');
+    }
+    // 延長保護窗
     S._lastWriteAt = Date.now();
   }
   S._pendingPayMethod = null;
@@ -3934,8 +3958,8 @@ async function saveEditOrder(){
   const total=items.reduce((s,it)=>s+it.sub,0);
   const original = grp.orders[idx];
   if(!original){ toast('找不到原訂單'); return; }
-  // 本地更新
-  grp.orders[idx]={...original, items, total, note, editedAt:new Date().toLocaleString('zh-TW')};
+  // 本地更新（_pendingSync = true 確保未確認上雲時不會被 polling 清掉）
+  grp.orders[idx]={...original, items, total, note, editedAt:new Date().toLocaleString('zh-TW'), _pendingSync:true};
   saveG();
   S._lastWriteAt = Date.now(); // 避免立刻被 syncGAS 覆蓋
   // 同步到 GAS
@@ -3947,15 +3971,16 @@ async function saveEditOrder(){
       name: original.name, items, total, note
     });
     if(!r?.success){
-      toast('⚠️ 雲端更新失敗：'+(r?.error||'未知錯誤'));
+      // 失敗：保留 _pendingSync 旗標 → 訂單永久保留在本地
+      toast('⚠️ 雲端更新失敗：'+(r?.error||'未知錯誤')+' — 已存本地，可重試');
     } else {
       // 付款方式在 editOrder 後可能被清掉，補一刀
       if(original.paidMethod){
         await sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:idx,paid:original.paid,paidMethod:original.paidMethod});
       }
-      // 雲端確認寫入後,延長保護窗
-      // 不主動 syncGAS：本地 grp.orders[idx] 已是新內容,合併用 name 為 key 不會出現舊+新並列。
-      // 後續 3 秒輪詢會把雲端版本（含新 ts）拉下來合併。
+      // 雲端確認寫入後 → 清掉 _pendingSync 旗標
+      if(grp.orders[idx]) delete grp.orders[idx]._pendingSync;
+      saveG();
       S._lastWriteAt = Date.now();
     }
   }
@@ -3971,12 +3996,20 @@ function cancelEdit(){
 
 // ── legacy doSubmit（保留向後相容）──
 async function doSubmit(name,total,note,items){
-  const order={name,total,note,items,ts:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})};
+  const order={name,total,note,items,ts:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}),_pendingSync:true};
   S.curGroup.orders=S.curGroup.orders||[];
   S.curGroup.orders.push(order);
+  const myIdx = S.curGroup.orders.length - 1;
   saveG();
   S._lastWriteAt = Date.now(); // 防止 syncGAS 把本地剛存的訂單當「本地獨有」丟掉
-  sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,order});
+  // 雲端確認後清旗標（fire-and-forget）
+  sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,order}).then(r=>{
+    if(r && r.success){
+      const ord = S.curGroup?.orders?.[myIdx];
+      if(ord) delete ord._pendingSync;
+      saveG();
+    }
+  });
   const myOrderIdx = (S.curGroup.orders||[]).length - 1;
 
   document.getElementById('dn-wrap').innerHTML=`
@@ -4126,14 +4159,18 @@ async function syncGAS(force){
           const L = localArr[i], R = remoteArr[i];
           if(L && R){
             // 合併 orders：以 name 為 key（同團內一人一筆，與後端 actionEditOrder 假設一致）。
-            // 遠端為唯一真相；只在 5 秒寫入保護期內才補本地獨有，避免覆蓋剛剛的本地新訂單。
+            // 遠端為唯一真相；本地獨有的訂單在以下情境保留：
+            //   (a) 帶 _pendingSync 旗標 — 尚未確認上雲，永遠保留直到後端確認
+            //   (b) 5 秒寫入保護期內 — 防止剛 push 但網路慢的訂單被誤丟
             const lo = L.orders||[], ro = R.orders||[];
             const seen = new Set();
             const mergedOrders = [];
             ro.forEach(o=>{ seen.add(o.name||''); mergedOrders.push(o); });
-            if(S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000){
-              lo.forEach(o=>{ if(!seen.has(o.name||'')) mergedOrders.push(o); });
-            }
+            const inWriteWindow = S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000;
+            lo.forEach(o=>{
+              if(seen.has(o.name||'')) return;
+              if(o && (o._pendingSync || inWriteWindow)) mergedOrders.push(o);
+            });
             merged.push({...R, orders: mergedOrders});
           } else if(R){
             merged.push(R);
