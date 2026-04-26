@@ -17,6 +17,7 @@
   --dark:#3A2E20;--dktx:#F4EDE0;
   --dr:#7A4E2A;--drbg:#EEDDC0;--drbdr:#C9B894;
   --fo:#7A4E2A;--fobg:#E5D4B4;--fobdr:#C9B894;
+  --te:#8B4E40;--tebg:#F1D9C8;--tebdr:#D9B6A0;
   --gold:#B8723E;--goldbg:#EFE6D4;
   --grn:#7A4E2A;--grnbg:#EFE6D4;
   --r:18px;--r2:14px;
@@ -28,6 +29,7 @@
     --dark:#0e0c0a;--dktx:#F4EDE0;
     --dr:#b88660;--drbg:#3a2e1f;--drbdr:#5a4d3a;
     --fo:#b88660;--fobg:#44361f;--fobdr:#5a4d3a;
+    --te:#c89070;--tebg:#3f2e25;--tebdr:#5a443a;
     --gold:#d48855;--goldbg:#2a2218;
     --grn:#d48855;--grnbg:#2a2218;
   }
@@ -174,6 +176,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .ohero{border-radius:var(--r);padding:13px 15px;margin-bottom:13px}
 .ohero.dr{background:var(--drbg);border:2px solid var(--drbdr)}
 .ohero.fo{background:var(--fobg);border:2px solid var(--fobdr)}
+.ohero.te{background:var(--tebg);border:2px solid var(--tebdr)}
 .oh-shop{font-size:1.02rem;font-weight:900}
 .oh-host{font-size:.71rem;color:var(--ink2);margin-top:3px}
 .oh-cnt{font-size:.66rem;font-family:'DM Mono',monospace;color:var(--ink3);margin-top:2px}
@@ -376,6 +379,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .gd-hero{border-radius:var(--r);padding:15px 17px;margin-bottom:14px}
 .gd-hero.dr{background:var(--drbg);border:2px solid var(--drbdr)}
 .gd-hero.fo{background:var(--fobg);border:2px solid var(--fobdr)}
+.gd-hero.te{background:var(--tebg);border:2px solid var(--tebdr)}
 .gd-shop{font-size:1.05rem;font-weight:900}
 .gd-host{font-size:.75rem;color:var(--ink2);margin-top:3px}
 .gd-stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
@@ -464,6 +468,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
   --v2-milk:#EFE6D4;
   --v2-drink-card:#EEDDC0;
   --v2-food-card:#E5D4B4;
+  --v2-tea-card:#F1D9C8;
 
   /* 墨色 */
   --v2-ink:#3A2E20;
@@ -492,6 +497,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
     --v2-milk:#2a2218;
     --v2-drink-card:#3a2e1f;
     --v2-food-card:#44361f;
+    --v2-tea-card:#3f2e25;
     --v2-ink:#f0ebe0;
     --v2-ink-soft:#b5a890;
     --v2-ink-muted:#857560;
@@ -723,6 +729,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 }
 .v2-type-card.v2-drink{background:var(--v2-drink-card)}
 .v2-type-card.v2-food{background:var(--v2-food-card)}
+.v2-type-card.v2-tea{background:var(--v2-tea-card)}
 .v2-type-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(58,46,32,.12)}
 .v2-type-card:active{transform:scale(.99)}
 .v2-type-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
@@ -1149,6 +1156,7 @@ body{background:var(--v2-paper)}
   position:relative;overflow:hidden;
 }
 .v2-hero-card.food{background:var(--v2-food-card)}
+.v2-hero-card.tea{background:var(--v2-tea-card)}
 .v2-hero-kicker{
   font-family:var(--v2-mono);font-size:10.5px;letter-spacing:2.8px;
   text-transform:uppercase;color:var(--v2-caramel);opacity:.75;
@@ -1671,7 +1679,7 @@ body{background:var(--v2-paper)}
 
     <div class="or-divider">或</div>
 
-    <button onclick="goPresets()" style="width:100%;padding:16px 20px;border-radius:999px;border:1px solid var(--v2-line);background:var(--v2-cream-lt);cursor:pointer;font-family:var(--v2-sans);display:flex;align-items:center;gap:12px;transition:all .2s">
+    <button id="preset-btn" onclick="goPresets()" style="width:100%;padding:16px 20px;border-radius:999px;border:1px solid var(--v2-line);background:var(--v2-cream-lt);cursor:pointer;font-family:var(--v2-sans);display:flex;align-items:center;gap:12px;transition:all .2s">
       <div style="width:36px;height:36px;border-radius:50%;background:var(--v2-milk);display:flex;align-items:center;justify-content:center;color:var(--v2-caramel)" id="preset-ico">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       </div>
@@ -1752,6 +1760,36 @@ const PW = '118';
 const GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbxg3iYFufruK5J3qt-kw2yp4GYJyNd5fMf4CrMFX9VeNtMIigHw6uLFhrwT7NHYLXx3JQ/exec';
 const WD = ['日','一','二','三','四','五','六'];
 const WDF = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+
+// ══════════════════════════════════════════════════
+// TYPE_CONFIG — 三種團類型的所有 type-specific 設定集中管理
+// 之後要新增第四種（早餐？宵夜？），只要在這加一筆 + 後端白名單加一個 key 即可
+// ══════════════════════════════════════════════════
+const TYPE_CONFIG = {
+  drink: {
+    label:'飲料', kicker:'DRINKS', icon:'🧋', shopLabel:'飲料店',
+    preset:'手搖飲、咖啡、茶飲', cssClass:'dr', heroClass:'dr',
+    title:'🧋 飲料團', shopPickTitle:'🧋 選擇飲料店',
+    orderTitle:'🧋 點飲料',
+    badgeBg:'var(--v2-milk)', usePresetShops:true, hasSugarIce:true
+  },
+  food: {
+    label:'便當', kicker:'BENTO', icon:'🍱', shopLabel:'便當餐廳',
+    preset:'便當、定食、簡餐', cssClass:'fo', heroClass:'fo',
+    title:'🍱 便當團', shopPickTitle:'🍱 選擇便當餐廳',
+    orderTitle:'🍱 點便當',
+    badgeBg:'var(--v2-food-card)', usePresetShops:true, hasSugarIce:false
+  },
+  tea: {
+    label:'下午茶', kicker:'TEATIME', icon:'🍰', shopLabel:'下午茶店',
+    preset:'蛋糕、咖啡、輕食', cssClass:'te', heroClass:'te',
+    title:'🍰 下午茶團', shopPickTitle:'🍰 選擇下午茶店',
+    orderTitle:'🍰 點下午茶',
+    badgeBg:'var(--v2-tea-card)', usePresetShops:false, hasSugarIce:false
+  }
+};
+const TYPE_KEYS = ['drink','food','tea'];
+function tcfg(t){ return TYPE_CONFIG[t] || TYPE_CONFIG.food; }
 
 // ══════════════════════════════════════════════════
 // 飲料店內建菜單（台南地區價格，可選甜度冰塊）
@@ -1978,24 +2016,26 @@ function renderDay(){
   var isToday=(k===tdKey);
   var sub=document.getElementById('day-sub');
   if(sub){
-    if(isToday) sub.textContent='— 飲料團與便當團可以同天並存';
-    else sub.textContent='— 這天要開飲料還是便當？';
+    if(isToday) sub.textContent='— 飲料、便當、下午茶可同天並存';
+    else sub.textContent='— 這天要開飲料、便當還是下午茶？';
   }
 
   // SVG icons
   var icoDrink='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14h20l-2 26a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3L14 14z"/><path d="M12 14h24"/><path d="M22 7c0 2 2 2 2 4s-2 2-2 4"/><path d="M28 9c0 1.5 1.5 1.5 1.5 3s-1.5 1.5-1.5 3"/></svg>';
   var icoFood='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="16" width="32" height="22" rx="3"/><path d="M8 22h32"/><path d="M14 10l4 6"/><path d="M24 8v8"/><path d="M34 10l-4 6"/></svg>';
+  var icoTea='<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22h28v4a12 12 0 0 1-12 12h-4A12 12 0 0 1 10 26v-4z"/><path d="M38 24h3a3 3 0 0 1 0 6h-3"/><path d="M16 14c0 2 2 2 2 4s-2 2-2 4"/><path d="M24 12c0 2 2 2 2 4s-2 2-2 4"/><path d="M32 14c0 2 2 2 2 4s-2 2-2 4"/></svg>';
+  var icoMap={drink:icoDrink,food:icoFood,tea:icoTea};
   var icoArrow='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
 
   var html='';
-  ['drink','food'].forEach(function(type){
-    var isDr=type==='drink';
+  TYPE_KEYS.forEach(function(type){
+    var cfg=tcfg(type);
     var raw=g[type];
     var grpList=Array.isArray(raw)?raw:(raw?[raw]:[]);
-    var kicker=isDr?'DRINKS':'BENTO';
-    var name=isDr?'飲料':'便當';
-    var ico=isDr?icoDrink:icoFood;
-    var footLeft=grpList.length?('已有 '+grpList.length+' 個團'):(isDr?'手搖飲、咖啡、茶飲':'便當、定食、簡餐');
+    var kicker=cfg.kicker;
+    var name=cfg.label;
+    var ico=icoMap[type]||icoFood;
+    var footLeft=grpList.length?('已有 '+grpList.length+' 個團'):cfg.preset;
 
     var grpCards='';
     if(grpList.length){
@@ -2100,6 +2140,7 @@ function renderGroupDetail(){
   const grp = Array.isArray(S.curGroup) ? S.curGroup[0] : S.curGroup;
   if(!grp){ toast('找不到團資料'); return; }
   S.curGroup = grp;
+  const cfg = tcfg(S.type);
   const isDr = S.type==='drink';
   const orders = grp.orders||[];
   // 重算每筆訂單金額，避免歷史資料的 total/sub 錯誤
@@ -2115,7 +2156,7 @@ function renderGroupDetail(){
   });
 
   const grpNum = (S.groups[S.selDate]&&Array.isArray(S.groups[S.selDate][S.type])&&S.groups[S.selDate][S.type].length>1) ? ' #'+(S.curGroupIdx+1) : '';
-  document.getElementById('gd-title').textContent=(isDr?'🧋 飲料團':'🍱 便當團')+grpNum+'訂單';
+  document.getElementById('gd-title').textContent=cfg.title+grpNum+'訂單';
   document.getElementById('gd-sub').textContent=grp.shopName+'｜團主 '+grp.hostName;
 
   // Build orders HTML
@@ -2150,7 +2191,7 @@ function renderGroupDetail(){
 
   const wrap = document.getElementById('gd-wrap');
   wrap.innerHTML = ''
-    +'<div class="gd-hero '+(isDr?'dr':'fo')+'">'
+    +'<div class="gd-hero '+cfg.heroClass+'">'
       +'<div class="gd-shop">'+(grp.shopIcon||'')+' '+grp.shopName+'</div>'
       +'<div class="gd-host">👤 團主：'+grp.hostName+'</div>'
       +(grp.announcement?'<div style="margin-top:7px;font-size:.76rem;opacity:.9">📢 '+grp.announcement+'</div>':'')
@@ -2264,18 +2305,23 @@ function confirmDelete(){
 // SHOP SELECT
 // ═══════════════════════════════════════════════
 function renderShopSel(){
-  const isDr=S.type==='drink';
-  document.getElementById('shop-t').textContent=isDr?'🧋 選擇飲料店':'🍱 選擇便當餐廳';
-  document.getElementById('shop-s').textContent='輸入關鍵字搜尋 或 瀏覽精選店家';
-  document.getElementById('shop-date').textContent=dlbl(S.selDate);
-  document.getElementById('shop-type-lbl').textContent=isDr?'飲料團':'便當團';
-  document.getElementById('shop-type-ico').textContent=isDr?'🧋':'🍱';
-  // 更新精選按鈕文字
+  const cfg = tcfg(S.type);
+  document.getElementById('shop-t').textContent = cfg.shopPickTitle;
+  document.getElementById('shop-s').textContent = cfg.usePresetShops
+    ? '輸入關鍵字搜尋 或 瀏覽精選店家'
+    : '尚無精選店家 — 直接拍照辨識菜單新增';
+  document.getElementById('shop-date').textContent = dlbl(S.selDate);
+  document.getElementById('shop-type-lbl').textContent = cfg.label + '團';
+  document.getElementById('shop-type-ico').textContent = cfg.icon;
+  // 更新精選按鈕文字 / 對下午茶直接隱藏「精選店家」按鈕
   const shopCount = getShopList(S.type).length;
-  const pl=document.getElementById('preset-lbl');
-  if(pl) pl.textContent=isDr?`瀏覽精選${shopCount}間飲料店`:`瀏覽精選${shopCount}間便當餐廳`;
-  const pi=document.getElementById('preset-ico');
-  if(pi) pi.textContent=isDr?'🧋':'🍱';
+  const pl = document.getElementById('preset-lbl');
+  if(pl) pl.textContent = `瀏覽精選${shopCount}間${cfg.shopLabel}`;
+  const pi = document.getElementById('preset-ico');
+  if(pi) pi.textContent = cfg.icon;
+  // 下午茶（usePresetShops:false）— 隱藏「瀏覽精選店家」入口
+  const presetBtn = document.getElementById('preset-btn');
+  if(presetBtn) presetBtn.style.display = cfg.usePresetShops ? '' : 'none';
   const fin=document.getElementById('fin');
   if(fin) fin.value='';
   const fdrop=document.getElementById('fdrop');
@@ -2326,10 +2372,11 @@ function globalFuzzy(q){
   const drop=document.getElementById('gfdrop');
   S.gFuzzyIdx=-1;
   if(!q.trim()){ drop.classList.remove('on'); return; }
-  // 把飲料和便當合併,並標註類型
-  const drinks=getShopList('drink').map((s,i)=>({s,i,type:'drink'}));
-  const foods =getShopList('food' ).map((s,i)=>({s,i,type:'food' }));
-  const all=[...drinks,...foods];
+  // 把所有 type 的店家合併,並標註類型
+  const all=[];
+  TYPE_KEYS.forEach(t=>{
+    getShopList(t).forEach((s,i)=>all.push({s,i,type:t}));
+  });
   // 對每家店:店名+地址 加上 品項串起來作為搜尋目標
   const hits=all.map(({s,i,type})=>{
     const itemTxt=(s.menu||[]).map(m=>m.name).join(' ');
@@ -2351,7 +2398,8 @@ function globalFuzzy(q){
     return;
   }
   drop.innerHTML=hits.map(({s,i,type,matched})=>{
-    const badge=type==='drink'?'<span style="background:var(--v2-milk);color:var(--v2-caramel);padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">飲料</span>':'<span style="background:var(--v2-food-card);color:var(--v2-caramel);padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">便當</span>';
+    const _bcfg = tcfg(type);
+    const badge=`<span style="background:${_bcfg.badgeBg};color:var(--v2-caramel);padding:1px 6px;border-radius:8px;font-size:.65rem;font-weight:700;margin-left:4px">${_bcfg.label}</span>`;
     const sub=matched?`含品項「${hilight(matched,q)}」`:s.addr;
     return `<div class="fitem" onclick="pickShopGlobal('${type}',${i})">
       <div class="fi-nm">${hilight(s.name,q)} ${s.icon||''}${badge}</div>
@@ -2503,8 +2551,9 @@ document.addEventListener('click',e=>{ if(!e.target.closest('#fwrap')) document.
 function saveOcrShopModal(detectedName, items){
   const existing = document.getElementById('save-shop-modal');
   if(existing) existing.remove();
+  const cfg = tcfg(S.type);
   const isDr = S.type==='drink';
-  const defaultIcon = isDr ? '🧋' : '🍱';
+  const defaultIcon = cfg.icon;
   const m = document.createElement('div');
   m.id = 'save-shop-modal';
   m.className = 'cf-modal';
@@ -2786,8 +2835,9 @@ function setupBack(){
 }
 
 function renderSetup(){
-  const isDr=S.type==='drink';
-  document.getElementById('setup-s').textContent=`${isDr?'🧋 飲料團':'🍱 便當團'}｜${S.shopSel?.name||''}`;
+  const cfg = tcfg(S.type);
+  const isDr = S.type==='drink';
+  document.getElementById('setup-s').textContent=`${cfg.title}｜${S.shopSel?.name||''}`;
   const w=document.getElementById('setup-wrap');
   if(S.setupStep===0) renderSetup0(w);
   else if(S.setupStep===1) renderSetup1(w);
@@ -2998,8 +3048,8 @@ async function doCreate(){
 // ═══════════════════════════════════════════════
 // ── 進入點餐頁：先選人 ──
 function renderOrder(){
-  const grp=S.curGroup, isDr=S.type==='drink';
-  document.getElementById('ord-t').textContent=isDr?'🧋 點飲料':'🍱 點便當';
+  const grp=S.curGroup, cfg=tcfg(S.type), isDr=S.type==='drink';
+  document.getElementById('ord-t').textContent=cfg.orderTitle;
   document.getElementById('ord-s').textContent=grp.shopName;
 
   // 防護：若 curGroup 意外是陣列，取第一個
@@ -3022,7 +3072,7 @@ function renderOrder(){
 }
 
 function renderOrderPage(){
-  const grp=S.curGroup, isDr=S.type==='drink';
+  const grp=S.curGroup, cfg=tcfg(S.type), isDr=S.type==='drink';
   const wrap=document.getElementById('ord-wrap');
   const p=S.persons[0];  // 單人模式，永遠是 persons[0]
 
@@ -3055,7 +3105,7 @@ function renderOrderPage(){
   }
 
   wrap.innerHTML=`
-    <div class="ohero ${isDr?'dr':'fo'}">
+    <div class="ohero ${cfg.heroClass}">
       <div class="oh-shop">${grp.shopIcon||''} ${grp.shopName}</div>
       <div class="oh-host">👤 團主：${grp.hostName}</div>
       ${existHtml}
@@ -3196,7 +3246,7 @@ function renderOList(){
   const menu=S.curGroup.menu||[];
   const cart=S.persons[S.activePerson]?.cart||{};
   const el=document.getElementById('olist'); if(!el) return;
-  const isDrink=S.type==='drink';
+  const hasSugarIce = tcfg(S.type).hasSugarIce;
   el.innerHTML=menu.map((item,i)=>{
     const cups=cart[i]||[];
     const q=cups.length;
@@ -3210,7 +3260,7 @@ function renderOList(){
         <div class="qrow">
           <button class="qbtn m" onclick="removeCup(${i})">−</button>
           <span class="qnum" id="qn-${i}">${q}</span>
-          <button class="qbtn p" onclick="${isDrink?"openCupModal("+i+")":"addCupDirect("+i+")"}">+</button>
+          <button class="qbtn p" onclick="${hasSugarIce?"openCupModal("+i+")":"addCupDirect("+i+")"}">+</button>
         </div>
       </div>
     </div>`;
@@ -3302,14 +3352,14 @@ function renderCartSummary(){
   const el=document.getElementById('cart-summary'); if(!el) return;
   const cart=S.persons[S.activePerson]?.cart||{};
   const menu=S.curGroup.menu||[];
-  const isDr=S.type==='drink';
+  const hasSugarIce = tcfg(S.type).hasSugarIce;
   const lines=[];
   Object.entries(cart).forEach(([i,cups])=>{
     if(!cups.length) return;
     const item=menu[i];
     if(!item) return;
     cups.forEach((cup,ci)=>{
-      const spec=isDr&&cup.sugar?` [${cup.sugar}/${cup.ice}]`:'';
+      const spec=hasSugarIce&&cup.sugar?` [${cup.sugar}/${cup.ice}]`:'';
       lines.push(`${item.name}${spec}`);
     });
   });
@@ -3987,7 +4037,7 @@ async function syncMenus(){
     const r = await fetch(GAS_URL+'?action=getMenus');
     const d = await r.json();
     if(d.success){
-      S.remoteMenus = { drinks: d.drinks||[], foods: d.foods||[] };
+      S.remoteMenus = { drinks: d.drinks||[], foods: d.foods||[], teas: d.teas||[] };
       localStorage.setItem('remote_menus', JSON.stringify(S.remoteMenus));
     }
   }catch(e){ console.warn('syncMenus failed:', e.message); }
@@ -3995,12 +4045,17 @@ async function syncMenus(){
 
 // 取得目前有效的店家列表（優先用 GAS，否則用內建）
 function getShopList(type){
-  const isDr = type==='drink';
   if(S.remoteMenus){
-    const list = isDr ? S.remoteMenus.drinks : S.remoteMenus.foods;
+    const list = type==='drink' ? S.remoteMenus.drinks
+               : type==='food'  ? S.remoteMenus.foods
+               : type==='tea'   ? (S.remoteMenus.teas||[])
+               : [];
     if(list && list.length > 0) return list;
   }
-  return isDr ? DRINK_LIST : FOOD_LIST;
+  // 內建 fallback：tea 沒有預設清單
+  if(type==='drink') return DRINK_LIST;
+  if(type==='food')  return FOOD_LIST;
+  return [];
 }
 
 async function syncGAS(){
@@ -4120,13 +4175,14 @@ document.addEventListener('visibilitychange', ()=>{
 // 精選店家列表
 // ═══════════════════════════════════════════════
 function goPresets(){
+  const cfg = tcfg(S.type);
   const isDr = S.type==='drink';
   const list  = getShopList(S.type);
   const count = list.length;
   const mgr = !!S.presetsManage;
 
   document.getElementById('ps-title').textContent =
-    isDr ? '🧋 精選飲料店（'+count+'間）' : '🍱 精選便當餐廳（'+count+'間）';
+    `${cfg.icon} 精選${cfg.shopLabel}（${count}間）`;
   document.getElementById('ps-sub').textContent = mgr ? '⚙️ 管理模式：可重新命名或刪除店家' : '含地址、電話、完整菜單';
 
   const wrap = document.getElementById('ps-wrap');
@@ -4308,7 +4364,7 @@ function exportPDF(){
   // Header
   html += '<div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--v2-ink);padding-bottom:14px;margin-bottom:18px">';
   html += '<div style="background:var(--v2-ink);color:var(--v2-accent);padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:700">EMBA E118</div>';
-  html += '<div><div style="font-size:1.2rem;font-weight:900">' + (isDr?'🧋 飲料':'🍱 便當') + '團訂單</div>';
+  html += '<div><div style="font-size:1.2rem;font-weight:900">' + tcfg(S.type).title + '訂單</div>';
   html += '<div style="font-size:.73rem;color:#666;margin-top:2px">列印：' + ts + '</div></div></div>';
 
   // Shop info table (店家資訊 + 地址/電話可點)
@@ -4354,7 +4410,7 @@ function doDownloadPDF(){
   if(!el){ toast('找不到訂單內容'); return; }
   if(typeof html2pdf === 'undefined'){ toast('PDF 套件載入中，請稍候再試'); return; }
   const grp = S.curGroup;
-  const fname = 'EMBA-E118-'+(S.type==='drink'?'飲料':'便當')+'-'+S.selDate+'-'+(grp?.shopName||'訂單')+'.pdf';
+  const fname = 'EMBA-E118-'+tcfg(S.type).label+'-'+S.selDate+'-'+(grp?.shopName||'訂單')+'.pdf';
   const content = document.getElementById('pdfview-content');
   if(!content){ toast('找不到訂單內容'); return; }
   toast('⏳ 產生 PDF 中…');
