@@ -1924,13 +1924,13 @@ function renderGrid(){
   const lbl=document.getElementById('w-lbl');
   if(lbl) lbl.textContent=`${monFmt} — ${sunFmt}`;
 
-  // 更新首頁 italic 副標：今日的團數
+  // 更新首頁 italic 副標：今日的團數（含所有 type：飲料/便當/下午茶）
   try{
     const tk=fmt(today);
     const tg=S.groups[tk]||{};
-    const tdr=Array.isArray(tg.drink)?tg.drink.length:(tg.drink?1:0);
-    const tfo=Array.isArray(tg.food)?tg.food.length:(tg.food?1:0);
-    const tot=tdr+tfo;
+    const tot=TYPE_KEYS.reduce((s,t)=>{
+      const v=tg[t]; return s + (Array.isArray(v)?v.length:(v?1:0));
+    },0);
     const sub=document.getElementById('v2-land-sub');
     if(sub){
       if(tot===0) sub.textContent='— 今日尚無桌開席';
@@ -1946,9 +1946,13 @@ function renderGrid(){
     const dw=d.getDay();
     const wkend = (dw===0||dw===6);
     const g=S.groups[k]||{};
-    const dr=Array.isArray(g.drink)?g.drink.length:(g.drink?1:0);
-    const fo=Array.isArray(g.food)?g.food.length:(g.food?1:0);
-    const total=dr+fo;
+    // 各類型團數（含飲料/便當/下午茶）
+    const typeCounts={};
+    TYPE_KEYS.forEach(t=>{
+      const v=g[t];
+      typeCounts[t]=Array.isArray(v)?v.length:(v?1:0);
+    });
+    const total=TYPE_KEYS.reduce((s,t)=>s+typeCounts[t],0);
     // 狀態文字
     let stat='';
     if(isTd && total===0) stat='<span class="muted">今日尚無開團</span>';
@@ -1959,8 +1963,9 @@ function renderGrid(){
     let counts='';
     if(total>0){
       const parts=[];
-      if(dr) parts.push(`飲料×${dr}`);
-      if(fo) parts.push(`便當×${fo}`);
+      TYPE_KEYS.forEach(t=>{
+        if(typeCounts[t]) parts.push(`${tcfg(t).label}×${typeCounts[t]}`);
+      });
       counts=`<span class="v2-drow-counts">${parts.join(' · ')}</span>`;
     } else {
       counts='<span></span>';
