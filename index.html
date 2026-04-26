@@ -3752,9 +3752,10 @@ async function doSubmitAll(){
     await Promise.all(myOrderIdxs.map(i =>
       sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:i,paid:true,paidMethod:payMethod})
     ));
-    // 雲端寫入完成,延長保護窗到此刻,並強制立即拉一次新狀態（畫面立即顯示）
+    // 雲端寫入完成,延長保護窗到此刻
+    // 不主動 syncGAS（避免雲端 read-after-write 短暫不一致時把本地剛存的訂單覆蓋掉）
+    // 本地 S.groups 已是最新,後續 3 秒輪詢會自然把雲端版本合併進來
     S._lastWriteAt = Date.now();
-    if(typeof syncGAS==='function') await syncGAS(true);
   }
   S._pendingPayMethod = null;
   S._submitting = false;
@@ -3952,9 +3953,10 @@ async function saveEditOrder(){
       if(original.paidMethod){
         await sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:idx,paid:original.paid,paidMethod:original.paidMethod});
       }
-      // 雲端確認寫入後,強制拉一次,讓畫面立即顯示最新狀態（不需要使用者再按重新整理）
+      // 雲端確認寫入後,延長保護窗
+      // 不主動 syncGAS：本地 grp.orders[idx] 已是新內容,合併用 name 為 key 不會出現舊+新並列。
+      // 後續 3 秒輪詢會把雲端版本（含新 ts）拉下來合併。
       S._lastWriteAt = Date.now();
-      if(typeof syncGAS==='function') await syncGAS(true);
     }
   }
   S.editingOrderIdx=-1; S.persons=[];
