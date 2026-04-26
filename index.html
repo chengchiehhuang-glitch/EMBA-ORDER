@@ -3740,6 +3740,8 @@ async function doSubmitAll(){
     }
   });
   saveG();
+  // 開啟 5 秒寫入保護窗,防止 syncGAS 把本地剛存的訂單當「本地獨有」丟掉
+  S._lastWriteAt = Date.now();
   // 同步到 GAS (等待完成,確保雲端有資料)
   if(GAS_URL){
     toast('⏳ 送出訂單中…');
@@ -3750,6 +3752,9 @@ async function doSubmitAll(){
     await Promise.all(myOrderIdxs.map(i =>
       sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:i,paid:true,paidMethod:payMethod})
     ));
+    // 雲端寫入完成,延長保護窗到此刻,並強制立即拉一次新狀態（畫面立即顯示）
+    S._lastWriteAt = Date.now();
+    if(typeof syncGAS==='function') await syncGAS(true);
   }
   S._pendingPayMethod = null;
   S._submitting = false;
@@ -3947,6 +3952,9 @@ async function saveEditOrder(){
       if(original.paidMethod){
         await sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:idx,paid:original.paid,paidMethod:original.paidMethod});
       }
+      // 雲端確認寫入後,強制拉一次,讓畫面立即顯示最新狀態（不需要使用者再按重新整理）
+      S._lastWriteAt = Date.now();
+      if(typeof syncGAS==='function') await syncGAS(true);
     }
   }
   S.editingOrderIdx=-1; S.persons=[];
@@ -3965,6 +3973,7 @@ async function doSubmit(name,total,note,items){
   S.curGroup.orders=S.curGroup.orders||[];
   S.curGroup.orders.push(order);
   saveG();
+  S._lastWriteAt = Date.now(); // 防止 syncGAS 把本地剛存的訂單當「本地獨有」丟掉
   sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,order});
   const myOrderIdx = (S.curGroup.orders||[]).length - 1;
 
@@ -4063,9 +4072,10 @@ function getShopList(type){
   return [];
 }
 
-async function syncGAS(){
+async function syncGAS(force){
   // 剛寫入 GAS 後 5 秒內不拉,避免覆蓋還沒同步到遠端的本地資料
-  if(S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000) return;
+  // (force=true 用於送單/改單剛完成時，主動拉一次保證畫面立即更新)
+  if(!force && S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000) return;
   try{
     const r=await fetch(GAS_URL+'?action=getGroups&_t='+Date.now());
     const d=await r.json();
