@@ -445,6 +445,20 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink)
 .cf-pw.err{border-color:var(--v2-caramel);animation:shake .3s}
 .cf-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
+/* member picker modal rows（取代原生 select，Android 友善） */
+.mp-row{
+  display:flex;align-items:center;gap:10px;
+  width:100%;padding:14px 14px;margin:0 0 4px;
+  background:transparent;border:1px solid transparent;border-radius:12px;
+  font-family:var(--v2-serif);font-size:15px;color:var(--v2-ink);text-align:left;
+  cursor:pointer;-webkit-tap-highlight-color:rgba(180,140,90,.2);
+  transition:background .15s,border-color .15s;
+}
+.mp-row:hover,.mp-row:active{background:var(--v2-cream-lt);border-color:var(--v2-line)}
+.mp-row.mp-sel{background:var(--v2-accent-soft,#f3e9d6);border-color:var(--v2-accent)}
+.mp-row.mp-other{margin-top:8px;border-top:1px solid var(--v2-line);border-radius:0 0 12px 12px;padding-top:18px;color:var(--v2-caramel);font-weight:500}
+.mp-check{display:inline-block;width:16px;text-align:center;color:var(--v2-accent);font-weight:900}
+
 /* PDF PRINT STYLES */
 @media print{
   body{background:#fff!important}
@@ -1834,7 +1848,8 @@ function init(){
   try{ S.groups=JSON.parse(localStorage.getItem('grps')||'{}'); }catch(e){}
   try{ S.remoteMenus=JSON.parse(localStorage.getItem('remote_menus')||'null'); }catch(e){}
   renderGrid();
-  if(GAS_URL){ syncGAS(); syncMenus(); startSyncPolling(); }
+  if(GAS_URL){ syncGAS(); syncMenus(); startSyncPolling(); retryPendingOrders(); }
+  updatePendingBanner();
 }
 function saveG(){ localStorage.setItem('grps',JSON.stringify(S.groups)); }
 function setGasUrl(url){
@@ -3158,20 +3173,20 @@ function renderOrderPage(){
       const curName = p?.name || '';
       const isMember = MEMBERS.includes(curName);
       const isOther = curName && !isMember;
-      const opts = MEMBERS.map(n=>`<option value="${n}" ${curName===n?'selected':''}>${n}</option>`).join('');
+      // ★ Android 修：原生 <select> 在 Samsung Internet / LINE WebView 卡住，改用 button + custom modal
+      const displayText = curName ? (isMember ? curName : '＋ '+curName+'（手動輸入）') : '—— 請選擇 ——';
+      const muted = !curName ? 'color:var(--v2-ink-muted);font-style:italic;font-weight:400;' : '';
       return `
       <div class="v2-selwrap">
-        <select class="v2-sel" id="ord-nm-sel" onchange="onMemberSelect(this.value)">
-          <option value="">—— 請選擇 ——</option>
-          ${opts}
-          <option value="__other__" ${isOther?'selected':''}>＋ 幫其他人點選（手動輸入姓名）</option>
-        </select>
+        <button type="button" class="v2-sel" id="ord-nm-trigger"
+                style="text-align:left;${muted}"
+                onclick="openMemberPicker()">${displayText}</button>
         <svg class="v2-sel-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <input class="v2-sel-input" id="ord-nm" style="display:${isOther?'block':'none'}"
         placeholder="輸入被代點人的姓名"
         value="${curName}"
-        oninput="S.persons[0].name=this.value">`;
+        oninput="S.persons[S.activePerson].name=this.value;refreshMemberTrigger();">`;
     })()}
 
     <div class="sect">選擇品項</div>
@@ -3254,6 +3269,84 @@ function onMemberSelect(v){
     S.persons[S.activePerson].name = v;
   }
   updatePersonTab(S.activePerson);
+  refreshMemberTrigger();
+}
+
+// ★ Android 友善的訂購人選單（取代原生 <select>）
+//   原生 select 加 appearance:none 在 Samsung Internet / LINE WebView 點不開
+function openMemberPicker(){
+  const existing = document.getElementById('member-picker-modal');
+  if(existing) existing.remove();
+  const curName = S.persons[S.activePerson]?.name || '';
+  // 用 textContent 跟 dataset 設值（不要把名字插進 HTML attribute），避免名字含 " ' < > 時 XSS / parse error
+  const m = document.createElement('div');
+  m.id = 'member-picker-modal';
+  m.className = 'cf-modal';
+  const otherSelected = curName && !MEMBERS.includes(curName);
+  m.innerHTML = `
+    <div class="cf-sheet" style="max-width:380px;max-height:78vh;display:flex;flex-direction:column;padding:18px 16px">
+      <div class="cf-title" style="text-align:left;margin-bottom:10px">選擇訂購人</div>
+      <div class="mp-list" id="mp-list" style="overflow-y:auto;flex:1;margin:-2px -4px 8px;padding:2px 4px"></div>
+      <div class="cf-btns" style="margin-top:4px"><button class="btn btn-out" id="mp-cancel-btn" style="flex:1">取消</button></div>
+    </div>`;
+  const list = m.querySelector('#mp-list');
+  MEMBERS.forEach(n=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'mp-row' + (n===curName ? ' mp-sel' : '');
+    const check = document.createElement('span');
+    check.className = 'mp-check';
+    check.textContent = (n===curName) ? '✓' : '';
+    const label = document.createElement('span');
+    label.textContent = n;
+    btn.appendChild(check);
+    btn.appendChild(label);
+    btn.addEventListener('click', ()=>pickMember(n));
+    list.appendChild(btn);
+  });
+  const otherBtn = document.createElement('button');
+  otherBtn.type = 'button';
+  otherBtn.className = 'mp-row mp-other' + (otherSelected ? ' mp-sel' : '');
+  const otherCheck = document.createElement('span');
+  otherCheck.className = 'mp-check';
+  otherCheck.textContent = otherSelected ? '✓' : '';
+  const otherLabel = document.createElement('span');
+  otherLabel.textContent = '＋ 幫其他人點選（手動輸入姓名）';
+  otherBtn.appendChild(otherCheck);
+  otherBtn.appendChild(otherLabel);
+  otherBtn.addEventListener('click', ()=>pickMember('__other__'));
+  list.appendChild(otherBtn);
+  document.body.appendChild(m);
+  m.querySelector('#mp-cancel-btn').addEventListener('click', closeMemberPicker);
+  m.addEventListener('click', e=>{ if(e.target===m) closeMemberPicker(); });
+}
+
+function closeMemberPicker(){
+  document.getElementById('member-picker-modal')?.remove();
+}
+
+function pickMember(v){
+  closeMemberPicker();
+  onMemberSelect(v);
+}
+
+// 在 name 更動後，把觸發按鈕顯示文字同步更新（手動輸入時即時反映）
+function refreshMemberTrigger(){
+  const btn = document.getElementById('ord-nm-trigger');
+  if(!btn) return;
+  const curName = S.persons[S.activePerson]?.name || '';
+  const isMember = MEMBERS.includes(curName);
+  if(!curName){
+    btn.textContent = '—— 請選擇 ——';
+    btn.style.color = 'var(--v2-ink-muted)';
+    btn.style.fontStyle = 'italic';
+    btn.style.fontWeight = '400';
+  } else {
+    btn.textContent = isMember ? curName : ('＋ '+curName+'（手動輸入）');
+    btn.style.color = '';
+    btn.style.fontStyle = '';
+    btn.style.fontWeight = '';
+  }
 }
 
 function toggleExistList(headerEl){
@@ -3755,6 +3848,8 @@ async function doSubmitAll(){
     if(existIdx >= 0){
       // ★ 同名合併：把新品項併入既有訂單，qty 累加
       const existing = grp.orders[existIdx];
+      // ★ 重要：在覆寫 existing._pendingSync 前先記錄前一次是不是 pending
+      const wasPending = !!existing._pendingSync;
       const combinedItems = mergeSameNameItems([...(existing.items||[]), ...(p.items||[])]);
       const newTotal = combinedItems.reduce((s,it)=>s+calcItemSub(it),0);
       existing.items = combinedItems;
@@ -3765,9 +3860,11 @@ async function doSubmitAll(){
       existing.ts = ts;
       existing._pendingSync = true; // 雲端尚未確認
       myOrderIdxs.push(existIdx);
-      // 傳給 GAS 只送本次新增的 items（讓後端記錄歷史，避免覆蓋既有資料）
-      // 後端用 name 匯總，加進來就對了
-      toSend.push({name:p.name, total:newTotal, note:p.note||existing.note||'', items:p.items, paid:true, paidMethod:payMethod, ts});
+      // ★ 修法：若前一筆 pending 還沒同步成功，這次必須送 combined（含舊 pending 的 items），
+      //         否則 _pendingPayload 被覆寫後舊 items 永遠不會送上雲端，造成資料遺失。
+      //         若前一筆已同步成功，仍只送本次新增的 items（讓後端用不同 cid 追加，避免重複）。
+      const itemsToSend = wasPending ? combinedItems : p.items;
+      toSend.push({name:p.name, total:newTotal, note:p.note||existing.note||'', items:itemsToSend, paid:true, paidMethod:payMethod, ts});
     } else {
       // 首次下單：照舊新建
       const order={name:p.name, total:p.total, note:p.note, items:p.items, paid:true, paidMethod:payMethod, ts, _pendingSync:true};
@@ -3784,9 +3881,18 @@ async function doSubmitAll(){
   let firstError = '';
   if(GAS_URL){
     toast('⏳ 送出訂單中…');
-    const submitResults = await Promise.all(toSend.map(order =>
-      sendGAS({action:'submitOrder',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,order})
-    ));
+    // 每筆訂單配一個 clientOrderId — ★ 每次送出都產新的，避免「同人重複下單」第二次重用第一次未同步的 cid 被當 idempotent 跳過
+    const submitResults = await Promise.all(toSend.map((order, k) => {
+      const oi = myOrderIdxs[k];
+      const cid = generateClientOrderId();
+      const payload = {action:'submitOrder', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, order, clientOrderId:cid};
+      if(grp.orders[oi]){
+        grp.orders[oi]._clientOrderId = cid;
+        grp.orders[oi]._pendingPayload = payload;
+      }
+      return sendGAS(payload);
+    }));
+    saveG();
     submitResults.forEach(r => {
       if(!r || r.success === false){
         allSyncOk = false;
@@ -3806,21 +3912,76 @@ async function doSubmitAll(){
       });
     }
     if(allSyncOk){
-      // 雲端確認成功 → 清掉 _pendingSync 旗標
-      myOrderIdxs.forEach(i => { if(grp.orders[i]) delete grp.orders[i]._pendingSync; });
+      // 雲端確認成功 → 清掉所有 pending 標記
+      myOrderIdxs.forEach(i => {
+        if(grp.orders[i]){
+          delete grp.orders[i]._pendingSync;
+          delete grp.orders[i]._pendingPayload;
+          delete grp.orders[i]._clientOrderId;
+        }
+      });
       saveG();
     } else {
-      // 雲端失敗：訂單留在本地、_pendingSync 旗標保留 → 永遠不會被 polling 清掉
+      // 雲端失敗：訂單留在本地，_pendingSync + _pendingPayload 保留供後續自動重送
       saveG();
-      toast('⚠️ 雲端同步失敗：' + firstError + ' — 訂單已存本地，可重新送出');
     }
     // 延長保護窗
     S._lastWriteAt = Date.now();
   }
   S._pendingPayMethod = null;
   S._submitting = false;
-  renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
-  go('s-done');
+  if(allSyncOk){
+    renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
+    go('s-done');
+  } else {
+    // ★ 雲端同步失敗 → 不跳「訂單送出！」成功畫面，改顯示重送 modal
+    showSyncFailedModal({pendingOrders, myOrderIdxs, payMethod, firstError});
+  }
+}
+
+// 雲端同步失敗時的明顯警示 modal（取代之前一閃即逝的 toast + 跳成功畫面）
+function showSyncFailedModal({pendingOrders, myOrderIdxs, payMethod, firstError}){
+  const existing = document.getElementById('sync-fail-modal');
+  if(existing) existing.remove();
+  const m = document.createElement('div');
+  m.id = 'sync-fail-modal';
+  m.className = 'cf-modal';
+  const names = (pendingOrders||[]).map(p=>p.name).join('、');
+  m.innerHTML = `
+    <div class="cf-sheet">
+      <div class="cf-title">⚠️ 雲端同步失敗</div>
+      <div class="cf-msg" style="text-align:left">
+        <div style="margin-bottom:8px"><b>${names || '訂單'}</b> 已暫存在本地，<b>雲端尚未收到</b>。</div>
+        <div style="font-size:.82rem;color:var(--ink2);margin-bottom:8px">原因：${firstError||'網路錯誤'}</div>
+        <div style="font-size:.82rem;color:var(--ink2)">系統會自動每幾秒嘗試重送一次；也可以立刻點下方按鈕重試。<br>請<b>不要關閉此頁面</b>直到顯示「同步成功」為止。</div>
+      </div>
+      <div class="cf-btns" style="flex-direction:column;gap:8px">
+        <button class="btn" id="sync-retry-btn" style="background:var(--v2-caramel);color:#fff;width:100%">🔄 立即重送</button>
+        <button class="btn btn-out" id="sync-view-btn" style="width:100%">查看本地訂單</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  document.getElementById('sync-retry-btn').onclick = async ()=>{
+    const btn = document.getElementById('sync-retry-btn');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ 重送中…'; }
+    // 解節流：剛剛 sendGAS 失敗時把 _lastRetryAt 寫成 now，10 秒節流會擋住此次手動重送
+    forceRetryAllPending();
+    const res = await retryPendingOrders();
+    if(res && res.failed===0 && res.retried>0){
+      m.remove();
+      toast('✅ 雲端同步成功');
+      renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
+      go('s-done');
+    } else {
+      if(btn){ btn.disabled=false; btn.textContent='🔄 立即重送'; }
+      toast('⚠️ 還是失敗，再試一次或檢查網路');
+    }
+  };
+  document.getElementById('sync-view-btn').onclick = ()=>{
+    m.remove();
+    renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
+    go('s-done');
+  };
 }
 
 function renderDoneAll(pendingOrders, myOrderIdxs, payMethod){
@@ -3994,34 +4155,64 @@ async function saveEditOrder(){
   const total=items.reduce((s,it)=>s+it.sub,0);
   const original = grp.orders[idx];
   if(!original){ toast('找不到原訂單'); return; }
+  // 配 clientOrderId — ★ 每次儲存編輯都產新的，避免「edit A pending 時做 edit B」B 被當 idempotent 跳過
+  const cid = generateClientOrderId();
+  const editPayload = {
+    action:'editOrder',
+    dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx,
+    name: original.name, items, total, note,
+    clientOrderId: cid
+  };
   // 本地更新（_pendingSync = true 確保未確認上雲時不會被 polling 清掉）
-  grp.orders[idx]={...original, items, total, note, editedAt:new Date().toLocaleString('zh-TW'), _pendingSync:true};
+  grp.orders[idx]={
+    ...original, items, total, note,
+    editedAt:new Date().toLocaleString('zh-TW'),
+    _pendingSync:true,
+    _pendingPayload: editPayload,
+    _clientOrderId: cid
+  };
   saveG();
   S._lastWriteAt = Date.now(); // 避免立刻被 syncGAS 覆蓋
   // 同步到 GAS
+  let editOk = false;
+  let editErr = '';
   if(GAS_URL){
     toast('⏳ 更新雲端中…');
-    const r = await sendGAS({
-      action:'editOrder',
-      dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx,
-      name: original.name, items, total, note
-    });
+    const r = await sendGAS(editPayload);
     if(!r?.success){
-      // 失敗：保留 _pendingSync 旗標 → 訂單永久保留在本地
-      toast('⚠️ 雲端更新失敗：'+(r?.error||'未知錯誤')+' — 已存本地，可重試');
+      editErr = (r?.error||'未知錯誤');
     } else {
+      editOk = true;
       // 付款方式在 editOrder 後可能被清掉，補一刀
       if(original.paidMethod){
-        await sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:idx,paid:original.paid,paidMethod:original.paidMethod});
+        const pr = await sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:idx,paid:original.paid,paidMethod:original.paidMethod});
+        if(!pr?.success){
+          // 付款狀態同步失敗 → 不能清 _pendingSync，下次自動重送會用 _pendingPayload 補
+          editOk = false;
+          editErr = pr?.error || '付款狀態同步失敗';
+        }
       }
-      // 雲端確認寫入後 → 清掉 _pendingSync 旗標
-      if(grp.orders[idx]) delete grp.orders[idx]._pendingSync;
-      saveG();
-      S._lastWriteAt = Date.now();
+      if(editOk){
+        if(grp.orders[idx]){
+          delete grp.orders[idx]._pendingSync;
+          delete grp.orders[idx]._pendingPayload;
+          delete grp.orders[idx]._clientOrderId;
+        }
+        saveG();
+        S._lastWriteAt = Date.now();
+      } else {
+        saveG();
+      }
     }
+  } else {
+    editOk = true; // 沒設 GAS URL 視為本地模式
   }
   S.editingOrderIdx=-1; S.persons=[];
-  toast('✅ 訂單已更新！');
+  if(editOk){
+    toast('✅ 訂單已更新！');
+  } else {
+    toast('⚠️ 雲端更新失敗：'+editErr+' — 已存本地，系統會自動重送');
+  }
   renderGroupDetail(); go('s-group');
 }
 
@@ -4097,24 +4288,169 @@ async function confirmMyPayment(idx, method){
 // ═══════════════════════════════════════════════
 // GAS
 // ═══════════════════════════════════════════════
+// 產生 client-side order id（重送時保持同一個 id，後端用此 id 去重）
+function generateClientOrderId(){
+  return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+}
+
 // 寫入 GAS:使用 text/plain 避免 CORS preflight,awaitable
+// 15 秒 timeout + redirect:'follow' 避免 Android Chrome / in-app browser 卡死
 async function sendGAS(p){
   if(!GAS_URL) return {success:false,error:'no GAS_URL'};
   // 記錄最後一次寫入時間,讓 polling 暫緩避免覆蓋本地
   S._lastWriteAt = Date.now();
+  const ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  const timeoutId = ctrl ? setTimeout(()=>ctrl.abort(), 15000) : null;
   try{
     const r = await fetch(GAS_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(p)
+      body: JSON.stringify(p),
+      redirect: 'follow',
+      ...(ctrl ? {signal: ctrl.signal} : {})
     });
+    if(timeoutId) clearTimeout(timeoutId);
     if(!r.ok) return {success:false,error:'HTTP '+r.status};
     return await r.json();
   }catch(e){
-    console.warn('sendGAS failed:', e.message);
-    return {success:false, error:e.message};
+    if(timeoutId) clearTimeout(timeoutId);
+    const errMsg = (e && e.name==='AbortError') ? '請求逾時（15 秒）' : (e && e.message) || 'network error';
+    console.warn('sendGAS failed:', errMsg);
+    return {success:false, error: errMsg};
   }
 }
+
+// ═══════════════════════════════════════════════
+// 自動重送未同步訂單（跨裝置資料一致性的關鍵）
+// 每次 polling + 頁面載入時掃描所有 _pendingSync 訂單，
+// 用儲存在本地的 _pendingPayload + _clientOrderId 重新呼叫 sendGAS。
+// 後端用 clientOrderId 去重，保證重送不會產生重複訂單。
+// ═══════════════════════════════════════════════
+async function retryPendingOrders(){
+  if(!GAS_URL) return {retried:0, succeeded:0, failed:0};
+  if(S._retrying) return {retried:0, succeeded:0, failed:0, skipped:'in-progress'};
+  S._retrying = true;
+  let retried=0, succeeded=0, failed=0;
+  try{
+    const dates = Object.keys(S.groups||{});
+    for(const dateKey of dates){
+      const types = Object.keys(S.groups[dateKey]||{});
+      for(const type of types){
+        const grpArr = S.groups[dateKey][type] || [];
+        for(let groupIdx=0; groupIdx<grpArr.length; groupIdx++){
+          const grp = grpArr[groupIdx];
+          if(!grp || !Array.isArray(grp.orders)) continue;
+          for(let oi=0; oi<grp.orders.length; oi++){
+            const order = grp.orders[oi];
+            if(!order || !order._pendingSync || !order._pendingPayload) continue;
+            // 節流：每筆訂單最快每 10 秒重送一次
+            const lastTry = order._lastRetryAt || 0;
+            if(Date.now() - lastTry < 10000) continue;
+            order._lastRetryAt = Date.now();
+            saveG();
+            retried++;
+            // 用儲存的 payload 重送（含 clientOrderId 做去重）
+            const r = await sendGAS(order._pendingPayload);
+            if(r && r.success){
+              // 補回付款狀態（若有）— 必須先成功才能清 pending
+              // ★ 用 name 不用 orderIdx：polling 期間陣列順序可能變動，name 是穩定 key
+              let paidOk = true;
+              if(order.paid && order.paidMethod && order.name){
+                const pr = await sendGAS({action:'updateOrderPaid', dateKey, type, groupIdx, name:order.name, paid:true, paidMethod:order.paidMethod});
+                if(!pr || pr.success === false) paidOk = false;
+              }
+              if(paidOk){
+                // 主資料 + 付款狀態都同步 OK → 清旗標
+                delete order._pendingSync;
+                delete order._pendingPayload;
+                delete order._clientOrderId;
+                delete order._lastRetryAt;
+                saveG();
+                succeeded++;
+              } else {
+                // 主資料寫入了但付款失敗 → 保留 pending，下次 retry 會用 clientOrderId 去重不重複寫資料，只補 paid
+                saveG();
+                failed++;
+              }
+            } else {
+              failed++;
+            }
+          }
+        }
+      }
+    }
+  } catch(e){
+    console.warn('retryPendingOrders error:', e && e.message);
+  } finally {
+    S._retrying = false;
+  }
+  // 更新頂部「未同步」橫條
+  updatePendingBanner();
+  return {retried, succeeded, failed};
+}
+
+// 頂部「X 筆訂單未同步」橫條（持續可見直到所有訂單同步成功）
+function updatePendingBanner(){
+  let count = 0;
+  const dates = Object.keys(S.groups||{});
+  for(const d of dates){
+    const types = Object.keys(S.groups[d]||{});
+    for(const t of types){
+      const arr = S.groups[d][t] || [];
+      for(const g of arr){
+        if(!g || !Array.isArray(g.orders)) continue;
+        for(const o of g.orders){
+          if(o && o._pendingSync) count++;
+        }
+      }
+    }
+  }
+  let bar = document.getElementById('pending-sync-bar');
+  if(count === 0){
+    if(bar) bar.remove();
+    return;
+  }
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'pending-sync-bar';
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:#b45309;color:#fff;padding:8px 14px;font-size:.82rem;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML = '<span>⚠️ '+count+' 筆訂單尚未同步雲端，系統會自動重試</span>'+
+    '<button id="pending-retry-now" style="background:#fff;color:#b45309;border:0;border-radius:6px;padding:5px 10px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.78rem">立即重試</button>';
+  document.getElementById('pending-retry-now').onclick = async ()=>{
+    const btn = document.getElementById('pending-retry-now');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ 重送中…'; }
+    // 重試時忽略節流，立即送
+    forceRetryAllPending();
+    const r = await retryPendingOrders();
+    if(btn && document.getElementById('pending-retry-now')){
+      btn.disabled=false; btn.textContent='立即重試';
+    }
+    if(r && r.succeeded > 0){
+      toast('✅ 已同步 '+r.succeeded+' 筆訂單');
+    }
+  };
+}
+
+// 點「立即重試」時把所有訂單的 _lastRetryAt 清掉，避免節流擋住
+function forceRetryAllPending(){
+  const dates = Object.keys(S.groups||{});
+  for(const d of dates){
+    const types = Object.keys(S.groups[d]||{});
+    for(const t of types){
+      const arr = S.groups[d][t] || [];
+      for(const g of arr){
+        if(!g || !Array.isArray(g.orders)) continue;
+        for(const o of g.orders){
+          if(o && o._pendingSync) o._lastRetryAt = 0;
+        }
+      }
+    }
+  }
+  saveG();
+}
+
 // ★ 從 GAS 讀取最新店家菜單（背景執行）
 async function syncMenus(){
   if(!GAS_URL) return;
@@ -4198,10 +4534,33 @@ async function syncGAS(force){
             // 遠端為唯一真相；本地獨有的訂單在以下情境保留：
             //   (a) 帶 _pendingSync 旗標 — 尚未確認上雲，永遠保留直到後端確認
             //   (b) 5 秒寫入保護期內 — 防止剛 push 但網路慢的訂單被誤丟
+            // ★ 關鍵：如果本地有 _pendingSync 訂單，name 即使對到遠端也要保留本地版本，
+            //         因為本地可能是「原始單 + 新加品項」的合併狀態（遠端只有原始單）。
+            // ★ NB-4 修法：但若遠端已包含本地 _clientOrderId（後端已收到此次送出），
+            //              就用遠端版本並清掉本地 pending 標記，避免無限循環保留舊本地。
             const lo = L.orders||[], ro = R.orders||[];
+            const localPendingByName = {};
+            lo.forEach(o=>{ if(o && o._pendingSync) localPendingByName[o.name||''] = o; });
             const seen = new Set();
             const mergedOrders = [];
-            ro.forEach(o=>{ seen.add(o.name||''); mergedOrders.push(o); });
+            ro.forEach(o=>{
+              const name = o.name||'';
+              seen.add(name);
+              const localP = localPendingByName[name];
+              if(localP){
+                const cid = localP._clientOrderId;
+                const remoteHasMyCid = cid && Array.isArray(o.orderIds) && o.orderIds.indexOf(cid) >= 0;
+                if(remoteHasMyCid){
+                  // 遠端已包含本次送出（cid 對到）→ 已同步，用遠端版本（自動丟掉本地 pending flag）
+                  mergedOrders.push(o);
+                } else {
+                  // 真正未同步，保留本地版本含 _pendingPayload
+                  mergedOrders.push(localP);
+                }
+              } else {
+                mergedOrders.push(o);
+              }
+            });
             const inWriteWindow = S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000;
             lo.forEach(o=>{
               if(seen.has(o.name||'')) return;
@@ -4221,6 +4580,7 @@ async function syncGAS(force){
     S.groups = out;
     saveG();
     rerenderCurrentScreen();
+    updatePendingBanner();
   }catch(e){ console.warn('syncGAS failed:', e.message); }
 }
 
@@ -4247,18 +4607,26 @@ function rerenderCurrentScreen(){
 }
 
 // ── 自動輪詢:每 3 秒拉一次遠端資料 (只有 tab 可見時) ──
+// 同時順便重送任何未同步訂單，確保所有裝置的資料最終一致
 let _syncTimer = null;
+let _pollTick = 0;
 function startSyncPolling(){
   if(_syncTimer) clearInterval(_syncTimer);
   _syncTimer = setInterval(()=>{
     if(document.visibilityState==='visible' && GAS_URL){
       syncGAS();
+      // 每兩個 poll cycle（6 秒）跑一次重送，避免太頻繁打 GAS
+      _pollTick++;
+      if(_pollTick % 2 === 0) retryPendingOrders();
     }
   }, 3000);
 }
 document.addEventListener('visibilitychange', ()=>{
-  // 回到 tab 時立刻同步一次
-  if(document.visibilityState==='visible' && GAS_URL) syncGAS();
+  // 回到 tab 時立刻同步一次 + 重送
+  if(document.visibilityState==='visible' && GAS_URL){
+    syncGAS();
+    retryPendingOrders();
+  }
 });
 
 // ═══════════════════════════════════════════════
