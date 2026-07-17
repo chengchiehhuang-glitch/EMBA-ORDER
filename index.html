@@ -8,6 +8,13 @@
 <meta http-equiv="Expires" content="0">
 <meta name="app-version" content="2026-04-08-v3">
 <title>EMBA E118 共學團點餐系統</title>
+<link rel="icon" type="image/png" href="assets/ncku-emba-logo.png">
+<meta name="description" content="E118 點餐系統｜成大 EMBA 118 共學團團體訂餐與菜單管理">
+<meta property="og:title" content="EMBA E118 共學團點餐系統">
+<meta property="og:description" content="E118 點餐系統｜成大 EMBA 118 共學團團體訂餐與菜單管理">
+<meta property="og:image" content="https://order.e118.aqualux.dev/assets/ncku-emba-logo.png">
+<meta property="og:url" content="https://order.e118.aqualux.dev/">
+<meta property="og:type" content="website">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&family=Noto+Serif+TC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1776,7 +1783,7 @@ const PW = '118';
 
 // 姓名改為手動輸入，不使用名單
 // 拍照辨識菜單透過 GAS 後端代理（避免 CORS、避免 Key 外洩）
-const GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbxg3iYFufruK5J3qt-kw2yp4GYJyNd5fMf4CrMFX9VeNtMIigHw6uLFhrwT7NHYLXx3JQ/exec';
+const GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbw6JlTEFcExbnMQo5QqRQl4ijBHaG7QAAGTKZLY5SO2i4pfg_5iBmQ57h_5kSO1dDLF/exec';
 const WD = ['日','一','二','三','四','五','六'];
 const WDF = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
 
