@@ -3908,8 +3908,11 @@ async function doSubmitAll(){
       const cid = generateClientOrderId();
       // ★ payload.order 必須是快照，不能直接放 grp.orders[oi] 本身。
       //   下面會把 payload 掛回該 order，若放本體就形成循環參照，JSON.stringify 會直接拋錯。
+      // ★ paid/paidMethod 一併帶上：後端 submitOrder 現在會直接寫付款狀態，
+      //   不必再補送一輪 updateOrderPaid（省掉整整一次序列 GAS 往返，送單時間砍半）。
       const payload = {action:'submitOrder', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx,
-        order:{name:order.name, items:order.items, total:order.total, note:order.note, ts:order.ts},
+        order:{name:order.name, items:order.items, total:order.total, note:order.note, ts:order.ts,
+               paid:order.paid, paidMethod:order.paidMethod},
         clientOrderId:cid};
       if(grp.orders[oi]){
         grp.orders[oi]._clientOrderId = cid;
@@ -3924,18 +3927,6 @@ async function doSubmitAll(){
         if(!firstError) firstError = (r && r.error) || '網路或後端錯誤';
       }
     });
-    // 後端 submitOrder 不寫 paid/paidMethod，需再補一刀 updateOrderPaid
-    if(allSyncOk){
-      const paidResults = await Promise.all(myOrderIdxs.map(i =>
-        sendGAS({action:'updateOrderPaid',dateKey:S.selDate,type:S.type,groupIdx:S.curGroupIdx,orderIdx:i,paid:true,paidMethod:payMethod})
-      ));
-      paidResults.forEach(r => {
-        if(!r || r.success === false){
-          allSyncOk = false;
-          if(!firstError) firstError = (r && r.error) || '付款方式同步失敗';
-        }
-      });
-    }
     if(allSyncOk){
       // 雲端確認成功 → 清掉所有 pending 標記
       myOrderIdxs.forEach(i => {
@@ -4504,10 +4495,17 @@ function getShopList(type){
   return [];
 }
 
+// ★ single-flight：上一次 sync 還沒回來就不要再發。
+//   舊版用 setInterval 每 3 秒硬發，GAS 慢時請求會重疊堆積，越慢越重疊、越重疊越慢，
+//   而且舊回應可能比新回應晚到、把新狀態蓋回舊的。
+let _syncInFlight = false;
+
 async function syncGAS(force){
+  if(_syncInFlight) return;
   // 剛寫入 GAS 後 5 秒內不拉,避免覆蓋還沒同步到遠端的本地資料
   // (force=true 用於送單/改單剛完成時，主動拉一次保證畫面立即更新)
   if(!force && S._lastWriteAt && (Date.now()-S._lastWriteAt) < 5000) return;
+  _syncInFlight = true;
   try{
     const r=await fetch(GAS_URL+'?action=getGroups&_t='+Date.now());
     const d=await r.json();
@@ -4607,6 +4605,7 @@ async function syncGAS(force){
     rerenderCurrentScreen();
     updatePendingBanner();
   }catch(e){ console.warn('syncGAS failed:', e.message); }
+  finally{ _syncInFlight = false; }   // ★ 必須用 finally：try 內有多個提早 return，否則旗標會卡住讓輪詢死掉
 }
 
 // ── 判斷目前在哪個畫面,呼叫對應 render 函式 ──
@@ -4635,16 +4634,24 @@ function rerenderCurrentScreen(){
 // 同時順便重送任何未同步訂單，確保所有裝置的資料最終一致
 let _syncTimer = null;
 let _pollTick = 0;
+// ★ 用遞迴 setTimeout 而非 setInterval：下一次一定排在這一次「做完之後」，
+//   請求不會堆積。看訂單清單時 10 秒（需要即時看到別人下單），其他畫面 30 秒。
+//   舊版固定 3 秒：30 人同開 = 每秒 10 次全表讀，後端長期飽和，所有人一起慢。
+const POLL_MS_ACTIVE = 10000;   // 正在看訂單清單
+const POLL_MS_IDLE   = 30000;   // 其他畫面
 function startSyncPolling(){
-  if(_syncTimer) clearInterval(_syncTimer);
-  _syncTimer = setInterval(()=>{
+  if(_syncTimer) clearTimeout(_syncTimer);
+  const tick = async ()=>{
     if(document.visibilityState==='visible' && GAS_URL){
-      syncGAS();
-      // 每兩個 poll cycle（6 秒）跑一次重送，避免太頻繁打 GAS
+      await syncGAS();
+      // 每兩輪跑一次重送，避免太頻繁打 GAS
       _pollTick++;
-      if(_pollTick % 2 === 0) retryPendingOrders();
+      if(_pollTick % 2 === 0) await retryPendingOrders();
     }
-  }, 3000);
+    const onGroupDetail = document.querySelector('.scr.on')?.id === 's-group';
+    _syncTimer = setTimeout(tick, onGroupDetail ? POLL_MS_ACTIVE : POLL_MS_IDLE);
+  };
+  _syncTimer = setTimeout(tick, POLL_MS_ACTIVE);
 }
 document.addEventListener('visibilitychange', ()=>{
   // 回到 tab 時立刻同步一次 + 重送
