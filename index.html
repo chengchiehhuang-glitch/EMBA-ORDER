@@ -1781,6 +1781,16 @@ body{background:var(--v2-paper)}
 // ═══════════════════════════════════════════════
 const PW = '118';
 
+// ?reset=1 → 清掉本機資料重新從雲端同步。給「送出中卡住」「畫面資料怪怪的」的人用。
+// 注意：會一併清掉尚未送出的訂單，所以要先問過。
+if(new URLSearchParams(location.search).has('reset')){
+  if(confirm('要清除這台裝置的本機資料嗎？\n\n清除後會重新從雲端同步一份乾淨的資料。\n⚠️ 尚未送出的訂單會一併清掉，無法復原。')){
+    localStorage.clear();
+    alert('✅ 已清除，即將重新載入');
+  }
+  location.replace(location.pathname);
+}
+
 // 姓名改為手動輸入，不使用名單
 // 拍照辨識菜單透過 GAS 後端代理（避免 CORS、避免 Key 外洩）
 const GAS_URL = localStorage.getItem('gas_url') || 'https://script.google.com/macros/s/AKfycbw6JlTEFcExbnMQo5QqRQl4ijBHaG7QAAGTKZLY5SO2i4pfg_5iBmQ57h_5kSO1dDLF/exec';
