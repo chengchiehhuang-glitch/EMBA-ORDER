@@ -3902,7 +3902,11 @@ async function doSubmitAll(){
     const submitResults = await Promise.all(toSend.map((order, k) => {
       const oi = myOrderIdxs[k];
       const cid = generateClientOrderId();
-      const payload = {action:'submitOrder', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx, order, clientOrderId:cid};
+      // ★ payload.order 必須是快照，不能直接放 grp.orders[oi] 本身。
+      //   下面會把 payload 掛回該 order，若放本體就形成循環參照，JSON.stringify 會直接拋錯。
+      const payload = {action:'submitOrder', dateKey:S.selDate, type:S.type, groupIdx:S.curGroupIdx,
+        order:{name:order.name, items:order.items, total:order.total, note:order.note, ts:order.ts},
+        clientOrderId:cid};
       if(grp.orders[oi]){
         grp.orders[oi]._clientOrderId = cid;
         grp.orders[oi]._pendingPayload = payload;
