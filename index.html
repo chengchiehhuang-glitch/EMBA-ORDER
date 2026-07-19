@@ -4788,6 +4788,17 @@ function mergeSameNameItems(items){
   return order.map(k=>map[k]);
 }
 
+// ★ 台灣電話正規化：店家電話若被 Sheets 當數字存，會掉開頭的 0
+//   （例：0933193093 → 933193093）。9 碼且開頭是 9 = 手機掉了 0 → 補回。
+function fmtTel(v){
+  if(v == null || v === '') return '';
+  let s = String(v).trim();
+  const digits = s.replace(/\D/g,'');
+  if(/^9\d{8}$/.test(digits)) return '0' + digits;   // 手機掉 0
+  if(/^[1-9]\d{7}$/.test(digits) && digits.length===8) return '0' + digits; // 市話掉 0（少見）
+  return s;
+}
+
 function exportPDF(){
   const grp = S.curGroup;
   if(!grp){ toast('找不到團資料'); return; }
@@ -4843,9 +4854,9 @@ function exportPDF(){
   // 中間 title（手機擠壓時會自動截斷）
   html += '<span style="font-family:\'Noto Serif TC\',serif;font-size:14px;font-weight:500;color:#F4EDE0;letter-spacing:0.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:center;min-width:0">EMBA E118 訂單</span>';
   // 下載：焦糖橘藥丸
-  html += '<button onclick="doDownloadPDF()" aria-label="下載 PDF" style="background:#B8723E;color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap" onmouseover="this.style.background=\'#A0632F\'" onmouseout="this.style.background=\'#B8723E\'">';
-  html += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-  html += '<span>下載 PDF</span></button>';
+  html += '<button onclick="printPDF()" aria-label="列印 / 存成 PDF" style="background:#B8723E;color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;flex-shrink:0;white-space:nowrap" onmouseover="this.style.background=\'#A0632F\'" onmouseout="this.style.background=\'#B8723E\'">';
+  html += '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+  html += '<span>存成 PDF</span></button>';
   html += '</div>';
 
   // Content
@@ -4862,7 +4873,7 @@ function exportPDF(){
   html += '<tr style="background:#f5f5f5"><td style="padding:7px 10px;border:1px solid #ddd;font-weight:700;width:70px">店家</td><td style="padding:7px 10px;border:1px solid #ddd">' + (grp.shopIcon||'') + ' ' + grp.shopName + '</td>';
   html += '<td style="padding:7px 10px;border:1px solid #ddd;font-weight:700;width:55px">團主</td><td style="padding:7px 10px;border:1px solid #ddd">' + grp.hostName + '</td></tr>';
   html += '<tr><td style="padding:7px 10px;border:1px solid #ddd;font-weight:700">地址</td><td style="padding:7px 10px;border:1px solid #ddd"><a href="' + mapUrl + '" style="color:#1d4ed8;text-decoration:none">📍 ' + (addr||'—') + '</a></td>';
-  const telStr = tel != null ? String(tel) : '';
+  const telStr = fmtTel(tel);
   html += '<td style="padding:7px 10px;border:1px solid #ddd;font-weight:700">電話</td><td style="padding:7px 10px;border:1px solid #ddd">' + (telStr ? '<a href="tel:' + telStr.replace(/-/g,'') + '" style="color:#15803d;text-decoration:none;font-weight:700">📞 ' + telStr + '</a>' : '—') + '</td></tr>';
   html += '<tr style="background:#f5f5f5"><td style="padding:7px 10px;border:1px solid #ddd;font-weight:700">日期</td><td colspan="3" style="padding:7px 10px;border:1px solid #ddd">' + S.selDate + '</td></tr>';
   if(grp.announcement) html += '<tr><td colspan="4" style="padding:7px 10px;border:1px solid #ddd"><b>📢</b> ' + grp.announcement + '</td></tr>';
@@ -4885,8 +4896,14 @@ function exportPDF(){
   html += '<div style="text-align:center;font-size:.7rem;color:#999;border-top:1px solid #eee;padding-top:10px">EMBA E118 共學團點餐系統　' + ts + '</div>';
   html += '</div></div>';
 
-  // Add print CSS
-  html += '<style>@media print{.no-print{display:none!important} body{margin:0} #pdfview{position:static!important;overflow:visible!important}}</style>';
+  // Add print CSS — 列印時只保留訂單內容，隱藏工具列與背後整個頁面
+  html += '<style>@media print{'
+        +   'body>*:not(#pdfview){display:none!important}'   // 藏掉背後的主畫面
+        +   '.no-print{display:none!important}'               // 藏掉頂部工具列
+        +   'body{margin:0;background:#fff}'
+        +   '#pdfview{position:static!important;inset:auto!important;overflow:visible!important;z-index:auto!important}'
+        +   '#pdfview-content{max-width:none!important;padding:0!important}'
+        + '}</style>';
 
   // Inject directly into body
   const existing = document.getElementById('pdfview');
@@ -4895,7 +4912,26 @@ function exportPDF(){
   window.scrollTo(0,0);
 }
 
-// 直接下載 PDF（使用 html2pdf.js）
+// ★ 存成 PDF：改用瀏覽器原生列印，取代 html2pdf.js。
+//   原因：html2pdf 的 .save() 會產生 blob: 網址再靠 <a download> 觸發下載，
+//   但 iOS Safari 不支援 download 屬性 → 直接跳轉到那個 blob 網址，頁面一變就失效，
+//   使用者看到的就是「一個打不開的網址」。window.print() 在 iPhone 會走原生
+//   分享選單→「儲存到檔案」存 PDF，桌機則是列印→另存 PDF，兩邊都不會產生死網址，
+//   而且 PDF 裡的地址/電話連結仍可點。
+function printPDF(){
+  const el = document.getElementById('pdfview');
+  if(!el){ toast('找不到訂單內容'); return; }
+  const grp = S.curGroup;
+  // 設定列印/存檔時的預設檔名（桌機的「另存 PDF」會用 document.title）
+  const oldTitle = document.title;
+  document.title = 'EMBA-E118-'+tcfg(S.type).label+'-'+S.selDate+'-'+(grp?.shopName||'訂單');
+  const restore = ()=>{ document.title = oldTitle; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  setTimeout(restore, 60000); // 保險：afterprint 沒觸發時也還原
+  window.print();
+}
+
+// 直接下載 PDF（使用 html2pdf.js）— 保留備用，主要入口已改為 printPDF()
 function doDownloadPDF(){
   const el = document.getElementById('pdfview');
   if(!el){ toast('找不到訂單內容'); return; }
