@@ -1744,7 +1744,7 @@ body{background:var(--v2-paper)}
 <!-- ORDER -->
 <div class="scr" id="s-order">
   <div class="tb">
-    <button class="tb-bk" onclick="go('day')">←</button>
+    <button class="tb-bk" onclick="leaveOrderScreen()">←</button>
     <div><div class="tb-t" id="ord-t">點餐</div><div class="tb-s" id="ord-s"></div></div>
   </div>
   <div class="wrap" id="ord-wrap"></div>
@@ -1760,11 +1760,18 @@ body{background:var(--v2-paper)}
 <div class="scr" id="s-confirm">
   <div class="tb"><button class="tb-bk" onclick="go('order')">←</button><div><div class="tb-t">確認訂單</div></div></div>
   <div class="wrap" id="cf-wrap"></div>
+  <!-- 固定底欄：最終送出鍵永遠看得到，不用捲到最下面才找得到（2026-08-01 加） -->
+  <div class="fbar on" id="cf-fbar">
+    <div class="fbar-in">
+      <div class="fbar-inf"><div class="fbar-l">尚未送出 · 應付</div><div class="fbar-a" id="cf-fbar-a">NT$0</div></div>
+      <button class="btn btn-dk" onclick="doSubmitAll()">✅ 確認送出</button>
+    </div>
+  </div>
 </div>
 
 <!-- DONE -->
 <div class="scr" id="s-done">
-  <div class="tb"><div class="tb-t" style="flex:1;text-align:center">完成 🎉</div></div>
+  <div class="tb"><div class="tb-t" id="dn-title" style="flex:1;text-align:center">完成 🎉</div></div>
   <div class="wrap" id="dn-wrap"></div>
 </div>
 
@@ -2178,6 +2185,12 @@ function joinGroup(type, idx){
   S.persons=[{name:'',cart:{},note:''}];
   S.activePerson=0;
   S.editingOrderIdx=-1;
+  // 有上次沒送出的草稿就復原，避免使用者重選（頁面被系統回收是常態）
+  const _draft=loadDraft();
+  if(_draft){
+    S.persons=_draft;
+    setTimeout(()=>toast('↩️ 已復原你上次還沒送出的選擇'),400);
+  }
   renderOrder(); go('order');
 }
 
@@ -3562,6 +3575,48 @@ function updFbar(){
     S.persons.length>1
       ? `本人 NT$${activeTot}｜合計 NT$${cTotal()}`
       : `NT$${activeTot}`;
+  saveDraft();
+}
+
+// ═══════════════════════════════════════════════
+// 未送出草稿保護（2026-08-01 加）
+// 起因：選好的品項只存在 S.persons 這個記憶體變數裡，從不落地。
+// 大家都是在 LINE 內建瀏覽器開的，切出去回個訊息、系統回收記憶體，
+// 整頁重載後選的東西全部消失且毫無提示，使用者往往以為自己已經點過了。
+// ═══════════════════════════════════════════════
+function draftKey(){
+  return 'draft_'+S.selDate+'_'+S.type+'_'+S.curGroupIdx;
+}
+function saveDraft(){
+  try{
+    if(!S.selDate || S.type===undefined || S.curGroupIdx===undefined || S.curGroupIdx===null) return;
+    if(S.editingOrderIdx>=0) return; // 修改既有訂單不是草稿，不要蓋掉
+    const hasAny=(S.persons||[]).some(p=>p&&(p.name||Object.keys(p.cart||{}).length));
+    if(!hasAny){ clearDraft(); return; }
+    localStorage.setItem(draftKey(), JSON.stringify({persons:S.persons, at:Date.now()}));
+  }catch(e){}
+}
+function loadDraft(){
+  try{
+    const raw=localStorage.getItem(draftKey());
+    if(!raw) return null;
+    const d=JSON.parse(raw);
+    if(!d||!Array.isArray(d.persons)) return null;
+    if(Date.now()-(d.at||0) > 86400000){ clearDraft(); return null; } // 超過 24 小時視為過期
+    const hasAny=d.persons.some(p=>p&&(p.name||Object.keys(p.cart||{}).length));
+    return hasAny ? d.persons : null;
+  }catch(e){ return null; }
+}
+function clearDraft(){
+  try{ localStorage.removeItem(draftKey()); }catch(e){}
+}
+function hasUnsentItems(){
+  return (S.persons||[]).some(p=>p&&Object.values(p.cart||{}).some(c=>c&&c.length));
+}
+// 離開點餐畫面前攔一下，避免選了一堆就這樣走掉
+function leaveOrderScreen(){
+  if(hasUnsentItems() && !confirm('你選的品項還沒送出喔！\n現在離開就會不見，確定要離開嗎？')) return;
+  go('day');
 }
 
 // ═══════════════════════════════════════════════
@@ -3627,12 +3682,14 @@ function goConfirm(){
     <div class="paybox">
       <div class="pb-t">💳 付款給團主 ${grp.hostName}</div>
       <div class="pb-a">NT$${grandTotal}</div>
-      <div class="pb-s">請先選擇付款方式並按「✅ 確認送出」記錄，再按最下方「確認送出所有訂單」</div>
+      <div class="pb-s">點一下付款方式即完成選定，接著<b>一定要按「✅ 確認送出所有訂單」</b>，訂單才會真的送出</div>
       <div id="pay-choice-area" style="display:flex;flex-direction:column;align-items:center;gap:8px">${simplePayBtns()}</div>
     </div>
     <div class="ibox i-ok">✅ 確認金額與付款方式無誤後送出</div>
     <button class="btn btn-dk btn-full" onclick="doSubmitAll()">✅ 確認送出所有訂單</button>
     <button class="btn btn-out btn-full mt8" onclick="go('order')">← 返回修改</button>`;
+  const cfa = document.getElementById('cf-fbar-a');
+  if(cfa) cfa.textContent = 'NT$'+grandTotal;
   go('s-confirm');
 }
 
@@ -3828,6 +3885,9 @@ function simplePayBtns(){
     return '<div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:8px">'
       +'<div style="display:inline-flex;align-items:center;gap:10px;background:'+c.bg+';color:'+c.fg+';border-radius:10px;padding:14px 22px;font-size:1.05rem;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.15)">'
       +'<span style="font-size:1.5rem">'+c.ico+'</span><span>'+c.name+'</span></div>'
+      // ★ 2026-08-01：這張綠色卡片跟「真的送出成功」長得太像，很多人看到就以為點完了。
+      //   加一條醒目警示，明確告訴使用者還沒送出。
+      +'<div style="width:100%;font-size:.78rem;font-weight:900;color:#b45309;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:8px;padding:9px 12px;text-align:center;line-height:1.6">⏳ 還沒送出喔！<br>請按下方「✅ 確認送出所有訂單」才算完成</div>'
       +'<button onclick="resetStagedPay()" style="background:transparent;border:1.5px solid var(--bdr2);color:var(--ink2);border-radius:8px;padding:7px 14px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">↩️ 取消，重新選擇</button>'
       +'</div>';
   }
@@ -3957,6 +4017,7 @@ async function doSubmitAll(){
   }
   S._pendingPayMethod = null;
   S._submitting = false;
+  clearDraft(); // 已經送出（本地至少已記錄），草稿不再需要，否則下次進來會重複復原
   if(allSyncOk){
     renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
     go('s-done');
@@ -4006,13 +4067,17 @@ function showSyncFailedModal({pendingOrders, myOrderIdxs, payMethod, firstError}
   };
   document.getElementById('sync-view-btn').onclick = ()=>{
     m.remove();
-    renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
+    // ★ 這裡雲端其實還沒收到，一定要標記 synced=false，否則會顯示假的「訂單送出！」
+    renderDoneAll(pendingOrders, myOrderIdxs, payMethod, false);
     go('s-done');
   };
 }
 
-function renderDoneAll(pendingOrders, myOrderIdxs, payMethod){
+// synced=false 代表「本地已記錄但雲端還沒收到」，此時絕不能顯示成功畫面（2026-08-01 修）
+function renderDoneAll(pendingOrders, myOrderIdxs, payMethod, synced){
   const grp=S.curGroup;
+  const _dnT=document.getElementById('dn-title');
+  if(_dnT) _dnT.textContent = (synced===false) ? '尚未送達 ⏳' : '完成 🎉';
   const grandTotal=pendingOrders.reduce((s,p)=>s+p.total,0);
   const pmLabel = payMethodLabel(payMethod||'');
   const pmIco = payMethod==='linepay'?'💚':payMethod==='ipass'?'💳':payMethod==='cash'?'💵':'';
@@ -4028,9 +4093,11 @@ function renderDoneAll(pendingOrders, myOrderIdxs, payMethod){
 
   document.getElementById('dn-wrap').innerHTML=`
     <div class="done-h">
-      <div class="done-ico">🎉</div>
-      <div class="done-t">訂單送出！</div>
-      <div class="done-s">${pendingOrders.length>1?`共 ${pendingOrders.length} 人，合計 NT$${grandTotal}`:'付款完成後請確認'}</div>
+      <div class="done-ico">${synced===false?'⏳':'🎉'}</div>
+      <div class="done-t">${synced===false?'還沒送達雲端':'訂單送出！'}</div>
+      <div class="done-s">${synced===false
+        ? '這筆訂單目前只存在你這支手機上。請<b>保持這個頁面開著</b>，系統會自動重送；直接關掉的話，團主不會看到你的訂單。'
+        : (pendingOrders.length>1?`共 ${pendingOrders.length} 人，合計 NT$${grandTotal}`:'付款完成後請確認')}</div>
     </div>
     ${receiptCards}
     <div class="paybox">
@@ -4038,9 +4105,9 @@ function renderDoneAll(pendingOrders, myOrderIdxs, payMethod){
       <div class="pb-a">NT$${grandTotal}</div>
       <div style="display:inline-flex;align-items:center;gap:10px;background:${pmBg};color:${pmFg};border-radius:10px;padding:14px 22px;font-size:1.05rem;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.15);margin-top:6px">
         <span style="font-size:1.5rem">${pmIco}</span>
-        <span>已記錄付款方式：${pmLabel}</span>
+        <span>${synced===false?`付款方式：${pmLabel}`:`已記錄付款方式：${pmLabel}`}</span>
       </div>
-      <div style="font-size:.72rem;color:var(--ink2);margin-top:8px">團主會在訂單清單看到此付款方式</div>
+      <div style="font-size:.72rem;color:var(--ink2);margin-top:8px">${synced===false?'⚠️ 訂單尚未送達，團主目前還看不到':'團主會在訂單清單看到此付款方式'}</div>
     </div>
     <button class="btn btn-out btn-full" style="margin-bottom:8px" onclick="openGroupDetail('${S.type}')">
       📋 查看今日訂單清單
@@ -4681,6 +4748,16 @@ document.addEventListener('visibilitychange', ()=>{
   }
 });
 
+// 關掉／重整分頁前，如果點餐畫面還有沒送出的品項就攔一下（2026-08-01 加）
+window.addEventListener('beforeunload', function(e){
+  const onOrderScreen = document.getElementById('s-order')?.classList.contains('on');
+  if(onOrderScreen && typeof hasUnsentItems==='function' && hasUnsentItems()){
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
+
 // ═══════════════════════════════════════════════
 // 精選店家列表
 // ═══════════════════════════════════════════════
@@ -5001,7 +5078,17 @@ function go(name){
 // TOAST
 // ═══════════════════════════════════════════════
 let _tt;
-function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('on'),2600); }
+function toast(m){
+  const el=document.getElementById('toast');
+  el.textContent=m;
+  // 畫面底部有固定送出欄時，toast 要往上讓，否則會遮住送出鍵（2026-08-01 修）
+  const bar=document.querySelector('.scr.on .fbar.on');
+  // offsetHeight 在某些情況會取到 0（例如頁面尚未完成排版），用 120 當保底
+  el.style.bottom = bar ? ((bar.offsetHeight||120)+16)+'px' : '';
+  el.classList.add('on');
+  clearTimeout(_tt);
+  _tt=setTimeout(()=>el.classList.remove('on'),2600);
+}
 
 init();
 </script>
