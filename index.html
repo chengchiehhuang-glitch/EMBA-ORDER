@@ -3924,8 +3924,7 @@ async function doSubmitAll(){
   S._submitting = true;
   // 立即鎖定送出按鈕，避免重複點擊
   const submitBtn = document.querySelector('#s-confirm button.btn-dk');
-  if(submitBtn){ submitBtn.disabled = true; submitBtn.style.opacity='.6'; submitBtn.textContent='⏳ 送出中…'; }
-  toast('⏳ 送出訂單中…');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.style.opacity='.6'; submitBtn.textContent='⏳ 處理中…'; }
 
   const grp = S.curGroup;
   grp.orders = grp.orders||[];
@@ -3968,13 +3967,24 @@ async function doSubmitAll(){
   saveG();
   // 開啟 5 秒寫入保護窗,防止 syncGAS 把本地剛存的訂單當「本地獨有」丟掉
   S._lastWriteAt = Date.now();
-  // 同步到 GAS (等待完成,確保雲端有資料)
-  let allSyncOk = true;
-  let firstError = '';
+
+  // ★ 樂觀送出（2026-08-05 改）：本地已經寫好（saveG 完成），對學生來說「送出」這個動作
+  //   在這裡就已經是確定的事實。GAS 後端回應時快時慢（實測同一個輕量請求 3~100+ 秒都有），
+  //   舊版在這裡 await 全部 sendGAS 完才跳完成畫面,等於強迫每個人陪雲端一起卡。
+  //   改法：立刻顯示完成畫面讓學生可以放心離開,實際同步搬到背景 fire-and-forget；
+  //   clientOrderId 去重 + LockService 序列化都在後端維持不變,背景重送不會造成重複訂單。
+  //   是否真的送達雲端，交給既有「頂部 X 筆訂單未同步」橫條 + retryPendingOrders 自動重試機制呈現，
+  //   使用者隨時可以點橫條的「立即重試」主動確認，不需要一直盯著這個畫面等。
+  S._pendingPayMethod = null;
+  S._submitting = false;
+  clearDraft(); // 已經送出（本地至少已記錄），草稿不再需要，否則下次進來會重複復原
+  updatePendingBanner(); // 立刻顯示「N 筆尚未同步」，背景送出結果出來後會再更新一次
+  renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
+  go('s-done');
+
   if(GAS_URL){
-    toast('⏳ 送出訂單中…');
     // 每筆訂單配一個 clientOrderId — ★ 每次送出都產新的，避免「同人重複下單」第二次重用第一次未同步的 cid 被當 idempotent 跳過
-    const submitResults = await Promise.all(toSend.map((order, k) => {
+    Promise.all(toSend.map((order, k) => {
       const oi = myOrderIdxs[k];
       const cid = generateClientOrderId();
       // ★ payload.order 必須是快照，不能直接放 grp.orders[oi] 本身。
@@ -3990,40 +4000,28 @@ async function doSubmitAll(){
         grp.orders[oi]._pendingPayload = payload;
       }
       return sendGAS(payload);
-    }));
-    saveG();
-    submitResults.forEach(r => {
-      if(!r || r.success === false){
-        allSyncOk = false;
-        if(!firstError) firstError = (r && r.error) || '網路或後端錯誤';
+    })).then(submitResults => {
+      saveG();
+      let allSyncOk = true;
+      submitResults.forEach(r => { if(!r || r.success === false) allSyncOk = false; });
+      if(allSyncOk){
+        // 雲端確認成功 → 清掉所有 pending 標記
+        myOrderIdxs.forEach(i => {
+          if(grp.orders[i]){
+            delete grp.orders[i]._pendingSync;
+            delete grp.orders[i]._pendingPayload;
+            delete grp.orders[i]._clientOrderId;
+          }
+        });
+        saveG();
       }
+      // 失敗的話留著 _pendingSync + _pendingPayload 不動，交給 retryPendingOrders 自動重送
+      updatePendingBanner();
+      S._lastWriteAt = Date.now(); // 延長保護窗
+    }).catch(err=>{
+      console.warn('doSubmitAll background sync error:', err && err.message);
+      updatePendingBanner();
     });
-    if(allSyncOk){
-      // 雲端確認成功 → 清掉所有 pending 標記
-      myOrderIdxs.forEach(i => {
-        if(grp.orders[i]){
-          delete grp.orders[i]._pendingSync;
-          delete grp.orders[i]._pendingPayload;
-          delete grp.orders[i]._clientOrderId;
-        }
-      });
-      saveG();
-    } else {
-      // 雲端失敗：訂單留在本地，_pendingSync + _pendingPayload 保留供後續自動重送
-      saveG();
-    }
-    // 延長保護窗
-    S._lastWriteAt = Date.now();
-  }
-  S._pendingPayMethod = null;
-  S._submitting = false;
-  clearDraft(); // 已經送出（本地至少已記錄），草稿不再需要，否則下次進來會重複復原
-  if(allSyncOk){
-    renderDoneAll(pendingOrders, myOrderIdxs, payMethod);
-    go('s-done');
-  } else {
-    // ★ 雲端同步失敗 → 不跳「訂單送出！」成功畫面，改顯示重送 modal
-    showSyncFailedModal({pendingOrders, myOrderIdxs, payMethod, firstError});
   }
 }
 
@@ -4388,13 +4386,13 @@ function generateClientOrderId(){
 }
 
 // 寫入 GAS:使用 text/plain 避免 CORS preflight,awaitable
-// 15 秒 timeout + redirect:'follow' 避免 Android Chrome / in-app browser 卡死
+// 30 秒 timeout（2026-08-05 由 15 秒拉長:實測 GAS 回應時快時慢,15 秒常把已成功的送單誤判逾時）+ redirect:'follow' 避免 Android Chrome / in-app browser 卡死
 async function sendGAS(p){
   if(!GAS_URL) return {success:false,error:'no GAS_URL'};
   // 記錄最後一次寫入時間,讓 polling 暫緩避免覆蓋本地
   S._lastWriteAt = Date.now();
   const ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
-  const timeoutId = ctrl ? setTimeout(()=>ctrl.abort(), 15000) : null;
+  const timeoutId = ctrl ? setTimeout(()=>ctrl.abort(), 30000) : null;
   try{
     const r = await fetch(GAS_URL, {
       method:'POST',
@@ -4408,7 +4406,7 @@ async function sendGAS(p){
     return await r.json();
   }catch(e){
     if(timeoutId) clearTimeout(timeoutId);
-    const errMsg = (e && e.name==='AbortError') ? '請求逾時（15 秒）' : (e && e.message) || 'network error';
+    const errMsg = (e && e.name==='AbortError') ? '請求逾時（30 秒）' : (e && e.message) || 'network error';
     console.warn('sendGAS failed:', errMsg);
     return {success:false, error: errMsg};
   }
