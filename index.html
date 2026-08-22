@@ -1699,10 +1699,10 @@ body{background:var(--v2-paper)}
     <div class="upload-menu-box" id="menu-upload-zone" onclick="document.getElementById('menu-img-input').click()">
       <div id="menu-upload-preview">
         <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="var(--v2-caramel)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto;display:block;opacity:.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <div class="upload-menu-txt">點擊上傳菜單照片<br><span style="font-family:var(--v2-sans);font-size:12px;color:var(--v2-ink-muted);font-weight:400">黑板、紙本、螢幕截圖皆可 · AI 自動辨識品項與價格</span></div>
+        <div class="upload-menu-txt">點擊上傳菜單照片（可一次選多張）<br><span style="font-family:var(--v2-sans);font-size:12px;color:var(--v2-ink-muted);font-weight:400">黑板、紙本、螢幕截圖皆可 · 多頁菜單一次選完，AI 自動合併品項</span></div>
       </div>
     </div>
-    <input type="file" id="menu-img-input" accept="image/*" style="display:none" onchange="handleMenuImg(event)">
+    <input type="file" id="menu-img-input" accept="image/*" multiple style="display:none" onchange="handleMenuImg(event)">
     <div class="ocr-progress" id="ocr-box">
       <div id="ocr-steps"></div>
     </div>
@@ -2520,112 +2520,184 @@ document.addEventListener('click',e=>{ if(!e.target.closest('#gfwrap')) document
 // ═══════════════════════════════════════════════
 // 📸 菜單照片上傳 + Claude Vision AI 辨識
 // ═══════════════════════════════════════════════
-async function handleMenuImg(e){
-  const file = e.target.files[0];
-  if(!file) return;
+// ── 檔案 → dataURL ──
+function fileToDataUrl(file){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ev => res(ev.target.result);
+    r.onerror = () => rej(new Error('讀取檔案失敗'));
+    r.readAsDataURL(file);
+  });
+}
 
-  // Preview image
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const dataUrl = ev.target.result;
-    const preview = document.getElementById('menu-upload-preview');
-    const zone = document.getElementById('menu-upload-zone');
-    if(preview) preview.innerHTML = `<img src="${dataUrl}" alt="菜單">`;
-    if(zone) zone.classList.add('has');
+// ── 圖片壓縮：長邊上限 2000px、JPEG 0.85 ──
+// 手機原圖 3~5MB 轉 base64 還會膨脹 33%，多張一起送很容易撞 Gemini 的單次請求上限。
+// 只在「檔案 > 1.2MB 或長邊 > 2000px」時才壓，小圖原樣送，避免二次壓縮把小字壓糊。
+async function compressMenuImg(file){
+  const MAX_EDGE = 2000, SIZE_GATE = 1.2*1024*1024;
+  const dataUrl = await fileToDataUrl(file);
+  const origin = { base64: dataUrl.split(',')[1], mimeType: file.type||'image/jpeg', dataUrl };
+  try{
+    const img = await new Promise((res,rej)=>{
+      const im = new Image();
+      im.onload = ()=>res(im);
+      im.onerror = ()=>rej(new Error('圖片解碼失敗'));
+      im.src = dataUrl;
+    });
+    const edge = Math.max(img.width, img.height);
+    if(file.size <= SIZE_GATE && edge <= MAX_EDGE) return origin;
+    const scale = edge > MAX_EDGE ? MAX_EDGE/edge : 1;
+    const cv = document.createElement('canvas');
+    cv.width  = Math.max(1, Math.round(img.width *scale));
+    cv.height = Math.max(1, Math.round(img.height*scale));
+    const cx = cv.getContext('2d');
+    cx.fillStyle = '#fff'; cx.fillRect(0,0,cv.width,cv.height); // PNG 透明底補白，不然會變黑
+    cx.drawImage(img,0,0,cv.width,cv.height);
+    const out = cv.toDataURL('image/jpeg', 0.85);
+    const b64 = out.split(',')[1];
+    if(!b64 || b64.length >= origin.base64.length) return origin; // 壓完反而更大就別壓
+    return { base64: b64, mimeType:'image/jpeg', dataUrl: out };
+  }catch(err){
+    console.warn('compressMenuImg fallback:', err);
+    return origin;
+  }
+}
 
-    // Extract base64 (remove prefix)
-    const base64 = dataUrl.split(',')[1];
-    const mimeType = file.type || 'image/jpeg';
+// ── 解析 GAS 回來的辨識結果（JSON 被截斷時用 regex 搶救品項）──
+function parseMenuResult(rawText){
+  let result = {shopName:'', items:[]};
+  const cleaned = String(rawText||'').replace(/```json/g,'').replace(/```/g,'').trim();
+  try{
+    const s = cleaned.indexOf('{'), en = cleaned.lastIndexOf('}');
+    if(s>=0 && en>s) result = JSON.parse(cleaned.slice(s,en+1));
+  }catch(pe){
+    console.warn('full parse fail, fallback to item extraction:', cleaned.slice(0,200));
+    const nameMatch = cleaned.match(/"shopName"\s*:\s*"([^"]*)"/);
+    if(nameMatch) result.shopName = nameMatch[1];
+    const itemRegex = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"price"\s*:\s*(\d+)\s*,\s*"cat"\s*:\s*"([^"]*)"\s*\}/g;
+    const items = []; let m;
+    while((m = itemRegex.exec(cleaned)) !== null) items.push({name:m[1], price:parseInt(m[2]), cat:m[3]});
+    result.items = items;
+  }
+  const items = (result.items||[])
+    .map(it=>({
+      name:  String(it.name||'').trim(),
+      price: parseInt(String(it.price||'0').replace(/[^\d]/g,''))||0,
+      cat:   String(it.cat||'').trim()
+    }))
+    .filter(it => it.name && it.name.length > 0);
+  return { shopName: String(result.shopName||'').trim(), items };
+}
 
-    // Show OCR progress
-    const ocrBox = document.getElementById('ocr-box');
-    const ocrSteps = document.getElementById('ocr-steps');
-    if(ocrBox) ocrBox.classList.add('on');
+// ── 單張送 GAS 辨識 ──
+async function recognizeOneMenuImg(file){
+  if(!GAS_URL) throw new Error('尚未設定 GAS_URL，無法使用拍照辨識');
+  const img = await compressMenuImg(file);
+  const resp = await fetch(GAS_URL,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},  // 用 text/plain 避免 GAS CORS preflight
+    body: JSON.stringify({ action:'recognizeMenu', mimeType: img.mimeType, imageBase64: img.base64 })
+  });
+  if(!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  if(!data.success) throw new Error(data.error || '辨識失敗');
+  if(!data.rawText) throw new Error('辨識失敗：沒有回傳內容');
+  return parseMenuResult(data.rawText);
+}
 
-    function setOcrSteps(steps){
-      if(ocrSteps) ocrSteps.innerHTML = steps.map(s =>
-        `<div class="ocr-step ${s.st}"><span class="dot"></span>${s.txt}</div>`
-      ).join('');
-    }
-
+// ── 多張串行辨識 + 合併去重 ──
+// 串行不並行：一次全打過去容易吃 Gemini 429，後端雖有模型 fallback 但同時撞沒意義。
+// 去重 key = 品名(去空白) + 價格；同名不同價（大小杯）兩筆都留，不幫使用者猜。
+// 單張失敗不中斷整批，最後把失敗張數回報出來。
+async function recognizeMenuFiles(files, onProgress){
+  const merged = [], seen = new Set(), errors = [];
+  let shopName = '', ok = 0;
+  for(let i=0;i<files.length;i++){
+    if(onProgress) onProgress(i, files.length, 'start', merged.length);
     try{
-      setOcrSteps([{st:'load',txt:'AI 正在辨識菜單照片…'}]);
-
-      if(!GAS_URL){
-        setOcrSteps([{st:'',txt:'⚠️ 尚未設定 GAS_URL，無法使用拍照辨識'}]);
-        return;
-      }
-      const resp = await fetch(GAS_URL,{
-        method:'POST',
-        headers:{'Content-Type':'text/plain'},  // 用 text/plain 避免 GAS CORS preflight
-        body: JSON.stringify({
-          action:'recognizeMenu',
-          mimeType: mimeType,
-          imageBase64: base64
-        })
+      const r = await recognizeOneMenuImg(files[i]);
+      if(!shopName && r.shopName) shopName = r.shopName;
+      r.items.forEach(it=>{
+        const key = it.name.replace(/\s+/g,'') + ' ' + it.price;
+        if(seen.has(key)) return;
+        seen.add(key);
+        merged.push(it);
       });
-
-      if(!resp.ok){
-        const errTxt = await resp.text();
-        throw new Error(`HTTP ${resp.status}`);
-      }
-
-      setOcrSteps([{st:'done',txt:'辨識完成'},{st:'load',txt:'解析菜單資料…'}]);
-
-      const data = await resp.json();
-      if(!data.success) throw new Error(data.error || '辨識失敗');
-      const rawText = data.rawText || '';
-      if(!rawText) throw new Error('辨識失敗：沒有回傳內容');
-
-      // Parse JSON（即使被截斷也搶救品項）
-      let result = {shopName:'', items:[]};
-      const cleaned = rawText.replace(/```json/g,'').replace(/```/g,'').trim();
-      try{
-        const s = cleaned.indexOf('{'), en = cleaned.lastIndexOf('}');
-        if(s>=0 && en>s) result = JSON.parse(cleaned.slice(s,en+1));
-      }catch(pe){
-        console.warn('full parse fail, fallback to item extraction:', rawText.slice(0,200));
-        // 抓 shopName
-        const nameMatch = cleaned.match(/"shopName"\s*:\s*"([^"]*)"/);
-        if(nameMatch) result.shopName = nameMatch[1];
-        // 用 regex 把每個 {name,price,cat} 物件挑出來
-        const itemRegex = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"price"\s*:\s*(\d+)\s*,\s*"cat"\s*:\s*"([^"]*)"\s*\}/g;
-        const items = [];
-        let m;
-        while((m = itemRegex.exec(cleaned)) !== null){
-          items.push({name:m[1], price:parseInt(m[2]), cat:m[3]});
-        }
-        result.items = items;
-      }
-
-      const items = (result.items||[])
-        .map(it=>({
-          name: String(it.name||'').trim(),
-          price: parseInt(String(it.price||'0').replace(/[^\d]/g,''))||0,
-          cat: String(it.cat||'').trim()
-        }))
-        .filter(it => it.name && it.name.length > 0);
-
-      if(items.length === 0){
-        setOcrSteps([{st:'',txt:'⚠️ 無法辨識品項，請確認照片清晰度'}]);
-        return;
-      }
-
-      setOcrSteps([
-        {st:'done',txt:'辨識完成'},
-        {st:'done',txt:`✅ 辨識到 ${items.length} 個品項`}
-      ]);
-
-      // 跳出 modal 讓使用者確認店名 + 決定是否存入店家資料庫
-      const detectedName = result.shopName || '';
-      saveOcrShopModal(detectedName, items);
-
+      ok++;
+      if(onProgress) onProgress(i, files.length, 'done', merged.length);
     }catch(err){
-      console.error('OCR error:', err);
-      setOcrSteps([{st:'',txt:'⚠️ ' + (err.message||'辨識失敗')}]);
+      console.error('OCR error (第'+(i+1)+'張):', err);
+      errors.push('第 ' + (i+1) + ' 張：' + (err.message||'辨識失敗'));
+      if(onProgress) onProgress(i, files.length, 'fail', merged.length);
     }
-  };
-  reader.readAsDataURL(file);
+  }
+  return { shopName, items: merged, ok, total: files.length, errors };
+}
+
+async function handleMenuImg(e){
+  const files = Array.from(e.target.files||[]);
+  e.target.value = '';            // 先清掉，讓同一批照片可以重選
+  if(!files.length) return;
+
+  const preview  = document.getElementById('menu-upload-preview');
+  const zone     = document.getElementById('menu-upload-zone');
+  const ocrBox   = document.getElementById('ocr-box');
+  const ocrSteps = document.getElementById('ocr-steps');
+  function setOcrSteps(steps){
+    if(ocrSteps) ocrSteps.innerHTML = steps.map(s =>
+      `<div class="ocr-step ${s.st}"><span class="dot"></span>${s.txt}</div>`
+    ).join('');
+  }
+
+  // 預覽：第一張縮圖，多張時標總張數
+  try{
+    const firstUrl = await fileToDataUrl(files[0]);
+    if(preview) preview.innerHTML = `<img src="${firstUrl}" alt="菜單">` +
+      (files.length>1 ? `<div class="upload-menu-txt" style="margin-top:6px">共 ${files.length} 張菜單照片</div>` : '');
+    if(zone) zone.classList.add('has');
+  }catch(_){}
+
+  if(ocrBox) ocrBox.classList.add('on');
+  if(!GAS_URL){
+    setOcrSteps([{st:'',txt:'⚠️ 尚未設定 GAS_URL，無法使用拍照辨識'}]);
+    return;
+  }
+
+  const label = n => files.length>1 ? `AI 辨識中… 第 ${n}/${files.length} 張` : 'AI 正在辨識菜單照片…';
+  setOcrSteps([{st:'load',txt:label(1)}]);
+
+  const res = await recognizeMenuFiles(files, (i,total,phase,count)=>{
+    const steps = [];
+    if(phase==='start'){
+      if(i>0) steps.push({st:'done',txt:`已完成 ${i}/${total} 張，累計 ${count} 個品項`});
+      steps.push({st:'load',txt:label(i+1)});
+    }else{
+      steps.push({
+        st: phase==='fail' ? '' : 'done',
+        txt: phase==='fail'
+          ? `⚠️ 第 ${i+1} 張辨識失敗，累計 ${count} 個品項`
+          : `已完成 ${i+1}/${total} 張，累計 ${count} 個品項`
+      });
+      if(i+1<total) steps.push({st:'load',txt:label(i+2)});
+    }
+    setOcrSteps(steps);
+  });
+
+  if(res.items.length === 0){
+    setOcrSteps([{st:'',txt:'⚠️ 無法辨識品項，請確認照片清晰度'}]
+      .concat(res.errors.map(t=>({st:'',txt:'⚠️ '+t}))));
+    return;
+  }
+
+  const done = [
+    {st:'done',txt: res.total>1 ? `辨識完成（${res.ok}/${res.total} 張成功）` : '辨識完成'},
+    {st:'done',txt:`✅ 辨識到 ${res.items.length} 個品項`}
+  ];
+  res.errors.forEach(t=>done.push({st:'',txt:'⚠️ '+t}));
+  setOcrSteps(done);
+
+  // 跳出 modal 讓使用者確認店名 + 決定是否存入店家資料庫
+  saveOcrShopModal(res.shopName || '', res.items);
 }
 
 document.addEventListener('click',e=>{ if(!e.target.closest('#fwrap')) document.getElementById('fdrop')?.classList.remove('on'); });
@@ -2718,7 +2790,7 @@ function saveOcrShopModal(detectedName, items){
     const preview = document.getElementById('menu-upload-preview');
     const zone = document.getElementById('menu-upload-zone');
     const ocrBox = document.getElementById('ocr-box');
-    if(preview) preview.innerHTML = '<div style="font-size:1.8rem">📷</div><div class="upload-menu-txt">點擊上傳菜單照片（黑板/紙本/螢幕截圖皆可）</div>';
+    if(preview) preview.innerHTML = '<div style="font-size:1.8rem">📷</div><div class="upload-menu-txt">點擊上傳菜單照片（可一次選多張）</div>';
     if(zone) zone.classList.remove('has');
     if(ocrBox) ocrBox.classList.remove('on');
     const fin = document.getElementById('menu-img-input');
@@ -2777,60 +2849,34 @@ async function renamePresetShop(idx){
 // ── 從精選店家頁拍照新增/更新店家 ──
 // 共用 OCR 邏輯（與 handleMenuImg 相同的 GAS 呼叫），完成後跳 saveOcrShopModal
 async function handlePresetMenuImg(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    const dataUrl = ev.target.result;
-    const base64 = dataUrl.split(',')[1];
-    const mimeType = file.type || 'image/jpeg';
-    toast('⏳ AI 辨識中，請稍候…');
-    try{
-      if(!GAS_URL){ toast('⚠️ 尚未設定 GAS_URL'); return; }
-      const resp = await fetch(GAS_URL,{
-        method:'POST',
-        headers:{'Content-Type':'text/plain'},
-        body: JSON.stringify({action:'recognizeMenu', mimeType, imageBase64: base64})
-      });
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      const data = await resp.json();
-      if(!data.success) throw new Error(data.error||'辨識失敗');
-      const rawText = data.rawText||'';
-      if(!rawText) throw new Error('沒有回傳內容');
-      let result = {shopName:'', items:[]};
-      const cleaned = rawText.replace(/```json/g,'').replace(/```/g,'').trim();
-      try{
-        const s = cleaned.indexOf('{'), en = cleaned.lastIndexOf('}');
-        if(s>=0 && en>s) result = JSON.parse(cleaned.slice(s,en+1));
-      }catch(pe){
-        // fallback regex
-        const nameMatch = cleaned.match(/"shopName"\s*:\s*"([^"]*)"/);
-        if(nameMatch) result.shopName = nameMatch[1];
-        const itemRegex = /\{\s*"name"\s*:\s*"([^"]+)"\s*,\s*"price"\s*:\s*(\d+)\s*,\s*"cat"\s*:\s*"([^"]*)"\s*\}/g;
-        let m; while((m=itemRegex.exec(cleaned))!==null) result.items.push({name:m[1],price:parseInt(m[2]),cat:m[3]});
-      }
-      const items = (result.items||[])
-        .map(it=>({name:String(it.name||'').trim(), price:parseInt(String(it.price||'0').replace(/[^\d]/g,''))||0, cat:String(it.cat||'').trim()}))
-        .filter(it=>it.name&&it.name.length>0);
-      if(items.length===0){ toast('⚠️ 無法辨識品項，請確認照片清晰度'); return; }
-      toast('✅ 辨識到 '+items.length+' 個品項');
-      // 如果是更新既有店家
-      if(S._updateShopTarget){
-        const shop = S._updateShopTarget;
-        S._updateShopTarget = null;
-        updateShopMenuModal(shop, items);
-      } else {
-        // 新增店家
-        saveOcrShopModal(result.shopName||'', items);
-      }
-    }catch(err){
-      console.error('OCR error:', err);
-      toast('⚠️ '+err.message);
-    }
-  };
-  reader.readAsDataURL(file);
-  // 清掉 value 讓同一檔案能再次觸發
-  e.target.value = '';
+  const files = Array.from(e.target.files||[]);
+  e.target.value = '';   // 清掉 value 讓同一批檔案能再次觸發
+  if(!files.length) return;
+  if(!GAS_URL){ toast('⚠️ 尚未設定 GAS_URL'); return; }
+
+  // 先鎖住目標：辨識期間可能有別的操作把 S._updateShopTarget 蓋掉
+  const target = S._updateShopTarget;
+  S._updateShopTarget = null;
+
+  toast(files.length>1 ? '⏳ AI 辨識中（共 '+files.length+' 張），請稍候…' : '⏳ AI 辨識中，請稍候…');
+
+  const res = await recognizeMenuFiles(files, (i,total,phase,count)=>{
+    if(total>1 && phase!=='start') toast('⏳ 已完成 '+(i+1)+'/'+total+' 張，累計 '+count+' 個品項');
+  });
+
+  if(res.items.length===0){
+    toast('⚠️ 無法辨識品項，請確認照片清晰度');
+    return;
+  }
+  toast(res.total>1
+    ? '✅ '+res.ok+'/'+res.total+' 張成功，辨識到 '+res.items.length+' 個品項'
+    : '✅ 辨識到 '+res.items.length+' 個品項');
+
+  if(target){
+    updateShopMenuModal(target, res.items);   // 更新既有店家
+  } else {
+    saveOcrShopModal(res.shopName||'', res.items);  // 新增店家
+  }
 }
 
 // ── 觸發「更新某家店菜單」的拍照 ──
@@ -4774,8 +4820,8 @@ function goPresets(){
   let html = '';
   // 管理模式切換
   // 拍照新增店家按鈕（隱藏的 file input）
-  html += '<input type="file" id="preset-img-input" accept="image/*" style="display:none" onchange="handlePresetMenuImg(event)">';
-  html += '<button onclick="document.getElementById(\'preset-img-input\').click()" style="width:100%;padding:13px;border-radius:10px;border:2px solid #06c755;background:#f0fdf4;color:#15803d;font-size:.86rem;font-weight:900;cursor:pointer;margin-bottom:8px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:1.2rem">📸</span> 拍照辨識菜單 → 新增/更新店家</button>';
+  html += '<input type="file" id="preset-img-input" accept="image/*" multiple style="display:none" onchange="handlePresetMenuImg(event)">';
+  html += '<button onclick="document.getElementById(\'preset-img-input\').click()" style="width:100%;padding:13px;border-radius:10px;border:2px solid #06c755;background:#f0fdf4;color:#15803d;font-size:.86rem;font-weight:900;cursor:pointer;margin-bottom:8px;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:1.2rem">📸</span> 拍照辨識菜單（可多張）→ 新增/更新店家</button>';
   html += '<button onclick="togglePresetsManage()" style="width:100%;padding:11px;border-radius:9px;border:2px solid '+(mgr?'var(--v2-caramel)':'var(--bdr2)')+';background:'+(mgr?'#fef2f2':'var(--sur)')+';color:'+(mgr?'var(--v2-caramel)':'var(--ink)')+';font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:12px;font-family:inherit">'+(mgr?'✓ 完成管理，返回正常模式':'⚙️ 進入管理模式（重命名/刪除店家）')+'</button>';
 
   list.forEach(function(shop, idx){
