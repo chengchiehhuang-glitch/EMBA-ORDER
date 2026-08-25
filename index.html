@@ -5116,7 +5116,43 @@ function go(name){
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   document.getElementById(target)?.classList.add('on');
   window.scrollTo(0,0);
+  // 進到非首頁畫面時確保 history 有一筆哨兵，左滑才攔得到（詳見下方 NAV_BACK）。
+  // 已經有哨兵就不再壓 → 冪等，就算被輪詢或任何 render 路徑重複呼叫也不會累積。
+  if(target!=='s-land' && !(history.state && history.state.e118nav)) navGuard();
 }
+
+// ── 左滑 / 上一頁 = App 內退一層（2026-08-25 加）────────────────────
+// 原本 go() 只切 .scr class、完全不碰 history，整個站對瀏覽器來說只有一頁，
+// 所以不管在哪個畫面左滑都直接離站回 SLC（點完餐想回去點飲料尤其困擾）。
+//
+// 做法：在 history 裡永遠壓一筆「哨兵」。左滑會消耗掉它並觸發 popstate，
+// 我們就呼叫「該畫面原本那顆 ← 按鈕」的既有邏輯（含點餐頁的未送出確認），
+// 然後補一筆新哨兵。因此畫面與 history 永遠同步、也不會累積。
+// 刻意不動 go()：前進不壓 history，避免背景輪詢或任何 render 路徑意外多壓一筆，
+// 那會害使用者要連按好幾次才離得開。
+// s-land（團列表首頁）沒有返回邏輯，go() 也不會替它壓哨兵 → 在首頁左滑即正常離站回 SLC。
+const NAV_BACK = {
+  's-help'   : ()=>go('land'),
+  's-day'    : ()=>go('land'),
+  's-shop'   : ()=>go('day'),
+  's-presets': ()=>go('s-shop'),
+  's-setup'  : ()=>setupBack(),
+  's-order'  : ()=>leaveOrderScreen(),   // 內含「品項還沒送出」confirm
+  's-confirm': ()=>go('order'),
+  's-done'   : ()=>{ go('land'); renderGrid(); },
+  's-group'  : ()=>go('day')
+};
+function navGuard(){ try{ history.pushState({e118nav:1},''); }catch(e){} }
+window.addEventListener('popstate', ()=>{
+  const cur = ()=>document.querySelector('.scr.on')?.id;
+  const from = cur();
+  const handler = NAV_BACK[from];
+  if(!handler) return;                 // 首頁：不攔，讓瀏覽器照常離站
+  try{ handler(); }catch(e){ console.error('nav back failed',e); }
+  // 正常退一層時 go() 已經補好哨兵；只有「點餐頁 confirm 被取消」會留在原畫面
+  // 而沒經過 go()，這時要自己補回來，否則下一次左滑會直接離站、繞過確認框。
+  if(cur()===from) navGuard();
+});
 
 // ═══════════════════════════════════════════════
 // TOAST
